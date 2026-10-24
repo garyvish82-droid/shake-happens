@@ -11,6 +11,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
+      "buildNumber": "7",
       "supportsTablet": true,
       "bundleIdentifier": "com.garik.shakehappens",
       "infoPlist": {
