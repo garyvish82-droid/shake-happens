@@ -44,21 +44,3 @@ function TabsContent() {
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
     BricolageGrotesque_400Regular,
-    BricolageGrotesque_600SemiBold,
-    BricolageGrotesque_800Bold,
-    JetBrainsMono_500Medium,
-    JetBrainsMono_700Bold,
-  });
-
-  useEffect(() => {
-    if (fontsLoaded || fontError) SplashScreen.hideAsync();
-  }, [fontsLoaded, fontError]);
-
-  if (!fontsLoaded && !fontError) return null;
-
-  return (
-    <ThemeProvider>
-      <TabsContent />
-    </ThemeProvider>
-  );
-}
