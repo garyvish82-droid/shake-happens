@@ -6,7 +6,13 @@
     "orientation": "portrait",
     "main": "expo-router/entry",
     "plugins": [
-      ["expo-router", { "root": "./src/app" }]
+      [
+        "expo-router",
+        {
+          "root": "./src/app"
+        }
+      ],
+      "expo-splash-screen"
     ],
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
