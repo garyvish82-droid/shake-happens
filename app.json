@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "shake-happens",
+    "name": "Shake Happens",
     "slug": "shake-happens",
     "version": "1.0.1",
     "orientation": "portrait",
@@ -11,25 +11,32 @@
           "root": "./src/app"
         }
       ],
-      "expo-splash-screen"
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "backgroundColor": "#082A54",
+          "resizeMode": "contain"
+        }
+      ]
     ],
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
     "ios": {
       "buildNumber": "7",
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.garik.shakehappens",
+      "userInterfaceStyle": "automatic",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#082A54",
         "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundImage": "./assets/android-icon-background.png"
       },
+      "userInterfaceStyle": "automatic",
       "predictiveBackGestureEnabled": false
     },
     "web": {

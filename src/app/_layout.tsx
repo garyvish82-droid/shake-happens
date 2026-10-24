@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
 import { ThemeProvider, useTheme } from '../theme/ThemeProvider';
-import { useFonts, BricolageGrotesque_400Regular, BricolageGrotesque_600SemiBold, BricolageGrotesque_800Bold } from '@expo-google-fonts/bricolage-grotesque';
+import { useFonts, Poppins_400Regular, Poppins_600SemiBold, Poppins_700Bold } from '@expo-google-fonts/poppins';
+import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold } from '@expo-google-fonts/inter';
 import { JetBrainsMono_500Medium } from '@expo-google-fonts/jetbrains-mono';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
@@ -14,9 +15,12 @@ function RootLayoutContent() {
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
-    BricolageGrotesque_400Regular,
-    BricolageGrotesque_600SemiBold,
-    BricolageGrotesque_800Bold,
+    Poppins_400Regular,
+    Poppins_600SemiBold,
+    Poppins_700Bold,
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
     JetBrainsMono_500Medium,
   });
 
