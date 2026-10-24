@@ -4,7 +4,6 @@
     "slug": "shake-happens",
     "version": "1.0.1",
     "orientation": "portrait",
-    "main": "expo-router/entry",
     "plugins": [
       [
         "expo-router",
