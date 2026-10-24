@@ -5,9 +5,9 @@
     "version": "1.0.1",
     "orientation": "portrait",
     "main": "expo-router/entry",
-      "plugins": [
-    "expo-router"
-  ],
+    "plugins": [
+      ["expo-router", { "root": "./src/app" }]
+    ],
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
