@@ -1,10 +1,12 @@
-import { Tabs } from 'expo-router';
+import { Stack } from 'expo-router';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider, useTheme } from '../theme/ThemeProvider';
 import {
   useFonts,
   BricolageGrotesque_400Regular,
   BricolageGrotesque_600SemiBold,
   BricolageGrotesque_700Bold,
+  BricolageGrotesque_800ExtraBold,
 } from '@expo-google-fonts/bricolage-grotesque';
 import {
   JetBrainsMono_500Medium,
@@ -12,56 +14,20 @@ import {
 } from '@expo-google-fonts/jetbrains-mono';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import { spacing, touchTarget } from '../theme/tokens';
 
 export { ErrorBoundary } from 'expo-router';
 
-export const unstable_settings = { initialRouteName: '(home)' };
-
 SplashScreen.preventAutoHideAsync();
 
-function TabsContent() {
+function RootStack() {
   const { palette } = useTheme();
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: palette.accent,
-        tabBarInactiveTintColor: palette.textMuted,
-        tabBarStyle: {
-          backgroundColor: palette.nav,
-          borderTopColor: palette.border,
-          borderTopWidth: 1,
-          height: touchTarget.nav,
-          paddingBottom: 8,
-          paddingTop: 8,
-        },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '600',
-          marginTop: 4,
-        },
-        sceneStyle: { backgroundColor: palette.bg },
-      }}
-    >
-      <Tabs.Screen
-        name="(home)"
-        options={{ title: 'Home', tabBarLabel: 'Home' }}
-      />
-      <Tabs.Screen
-        name="(shifts)"
-        options={{ title: 'Shifts', tabBarLabel: 'Shifts' }}
-      />
-      <Tabs.Screen
-        name="(log)"
-        options={{ title: 'Log', tabBarLabel: 'Log' }}
-      />
-      <Tabs.Screen
-        name="(navigator)"
-        options={{ title: 'Find Camp', tabBarLabel: 'Find' }}
-      />
-    </Tabs>
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: palette.bg } }}>
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="rush" />
+      <Stack.Screen name="insights" />
+    </Stack>
   );
 }
 
@@ -70,6 +36,7 @@ export default function RootLayout() {
     BricolageGrotesque_400Regular,
     BricolageGrotesque_600SemiBold,
     BricolageGrotesque_700Bold,
+    BricolageGrotesque_800ExtraBold,
     JetBrainsMono_500Medium,
     JetBrainsMono_700Bold,
   });
@@ -85,8 +52,10 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider>
-      <TabsContent />
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <RootStack />
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }

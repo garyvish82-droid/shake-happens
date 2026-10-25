@@ -107,6 +107,18 @@ export class Database {
     }
   }
 
+  // Undo a logged shake (soft delete, synced through the outbox)
+  async voidShake(id: string, campId: string) {
+    if (!this.db) throw new Error('Database not initialized');
+
+    const now = Date.now();
+    await this.db.runAsync(
+      'UPDATE shake_logs SET voided = 1, updated_at = ? WHERE id = ?',
+      [now, id]
+    );
+    await this.queueOutbox('shake_logs', 'UPDATE', id, { id, camp_id: campId, voided: 1, updated_at: now });
+  }
+
   // Outbox management (for offline sync)
   private async queueOutbox(
     tableName: string,
