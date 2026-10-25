@@ -1,10 +1,12 @@
 import { Tabs } from 'expo-router';
+
+export { ErrorBoundary } from 'expo-router';
 import { ThemeProvider, useTheme } from '../theme/ThemeProvider';
 import {
   useFonts,
   BricolageGrotesque_400Regular,
   BricolageGrotesque_600SemiBold,
-  BricolageGrotesque_800Bold,
+  BricolageGrotesque_700Bold,
 } from '@expo-google-fonts/bricolage-grotesque';
 import {
   JetBrainsMono_500Medium,
@@ -38,7 +40,7 @@ function TabsContent() {
           fontWeight: '600',
           marginTop: 4,
         },
-        contentStyle: { backgroundColor: palette.bg },
+        sceneStyle: { backgroundColor: palette.bg },
       }}
     >
       <Tabs.Screen
@@ -65,7 +67,7 @@ export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
     BricolageGrotesque_400Regular,
     BricolageGrotesque_600SemiBold,
-    BricolageGrotesque_800Bold,
+    BricolageGrotesque_700Bold,
     JetBrainsMono_500Medium,
     JetBrainsMono_700Bold,
   });

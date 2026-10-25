@@ -70,5 +70,5 @@ export const fontWeight = { regular: '400', semibold: '600', bold: '700' } as co
 export const fonts = { heading: 'Poppins', body: 'Inter', mono: 'JetBrainsMono' } as const;
 
 export type Theme = 'light' | 'dark';
-export type Palette = typeof dayPalette;
+export type Palette = { [K in keyof typeof dayPalette]: string };
 export const getPalette = (theme: Theme): Palette => theme === 'light' ? dayPalette : nightPalette;
