@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Image, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as Location from 'expo-location';
@@ -26,6 +26,17 @@ export default function Onboarding() {
   const [query, setQuery] = useState('');
   const [picked, setPicked] = useState<string | null>(null);
   const [finishing, setFinishing] = useState(false);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+
+  // while the keyboard is open the screen is short: the name step collapses its header to make room for results
+  useEffect(() => {
+    const show = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', () => setKeyboardOpen(true));
+    const hide = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => setKeyboardOpen(false));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   const finish = async (askLocation: boolean) => {
     if (finishing) return;
@@ -103,8 +114,8 @@ export default function Onboarding() {
     return (
       <KeyboardAvoidingView style={{ flex: 1, backgroundColor: palette.bg }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <StatusBar style="dark" />
-        <View style={{ flex: 1, paddingTop: insets.top + 12, paddingHorizontal: 20, gap: 14 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <View style={{ flex: 1, paddingTop: insets.top + (keyboardOpen ? 4 : 12), paddingHorizontal: 20, gap: keyboardOpen ? 10 : 14 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
             <Pressable
               accessibilityLabel="Back"
               onPress={() => {
@@ -116,13 +127,19 @@ export default function Onboarding() {
             >
               <Icon name="back" size={20} color={palette.text} strokeWidth={2.4} />
             </Pressable>
-            {progress(1)}
+            {keyboardOpen ? (
+              <Text size={22} weight="heavy" tracking={-0.02} style={{ flex: 1 }}>Who are you?</Text>
+            ) : (
+              progress(1)
+            )}
           </View>
 
-          <Pressable onPress={Keyboard.dismiss} accessible={false} style={{ gap: 4 }}>
-            <Text size={30} weight="heavy" tracking={-0.02}>Who are you?</Text>
-            <Text size={15} weight="semibold" muted>Type a few letters of your name, then tap it.</Text>
-          </Pressable>
+          {!keyboardOpen && (
+            <Pressable onPress={Keyboard.dismiss} accessible={false} style={{ gap: 4 }}>
+              <Text size={30} weight="heavy" tracking={-0.02}>Who are you?</Text>
+              <Text size={15} weight="semibold" muted>Type a few letters of your name, then tap it.</Text>
+            </Pressable>
+          )}
 
           {!data ? (
             <View style={{ backgroundColor: palette.surface, borderWidth: 1.5, borderColor: palette.border, borderRadius: 16, padding: 16, gap: 12 }}>
@@ -212,7 +229,7 @@ export default function Onboarding() {
             </>
           )}
 
-          <View style={{ paddingBottom: Math.max(insets.bottom, 16) }}>
+          <View style={{ paddingBottom: keyboardOpen ? 8 : Math.max(insets.bottom, 16) }}>
             <Pressable
               accessibilityRole="button"
               disabled={!pickedVisible}
@@ -220,7 +237,7 @@ export default function Onboarding() {
                 Keyboard.dismiss();
                 setStep('location');
               }}
-              style={{ height: 60, borderRadius: 30, backgroundColor: pickedVisible ? palette.ink : palette.border, alignItems: 'center', justifyContent: 'center' }}
+              style={{ height: keyboardOpen ? 52 : 60, borderRadius: 30, backgroundColor: pickedVisible ? palette.ink : palette.border, alignItems: 'center', justifyContent: 'center' }}
             >
               <Text size={18} weight="heavy" color={pickedVisible ? palette.onInk : palette.textMuted} numberOfLines={1}>
                 {pickedVisible && pickedName ? `Continue as ${pickedName}` : 'Tap your name above'}
