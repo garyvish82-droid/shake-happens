@@ -21,7 +21,7 @@ export function TabBar({ state, navigateToTab }: TabBarProps) {
   const insets = useSafeAreaInsets();
   const focused = state.routes[state.index]?.name;
 
-  // Rush and Insights are full-screen: no tab bar
+  // Insights is a full-screen page: no tab bar
   if (!TABS.some((t) => t.route === focused)) return null;
 
   return (

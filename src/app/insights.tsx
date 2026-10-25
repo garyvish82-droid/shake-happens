@@ -119,7 +119,7 @@ export default function InsightsScreen() {
         </View>
         <View style={{ gap: 2 }}>
           <Text size={15} weight="bold" color={palette.onInk}>Third person on 18:00–20:00, Thu–Sat</Text>
-          <Text size={13} color={palette.onInk}>9 rush calls in that slot</Text>
+          <Text size={13} color={palette.onInk}>Busiest slot of the day</Text>
         </View>
       </View>
     </Screen>

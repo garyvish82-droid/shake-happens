@@ -154,15 +154,6 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {/* rush */}
-      <Pressable
-        onPress={() => router.navigate('/rush')}
-        style={{ height: 64, borderRadius: 20, backgroundColor: palette.ink, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 }}
-      >
-        <Icon name="bolt" size={26} color={palette.accent} />
-        <Text size={19} weight="heavy" color={palette.onInk}>Rush? Call for help</Text>
-      </Pressable>
-
       {/* quick links */}
       <View style={{ flexDirection: 'row', gap: 10 }}>
         <Pressable

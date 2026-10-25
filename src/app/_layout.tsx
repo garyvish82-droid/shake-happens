@@ -26,7 +26,6 @@ function RootStack() {
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: palette.bg } }}>
       <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="rush" />
       <Stack.Screen name="insights" />
     </Stack>
   );

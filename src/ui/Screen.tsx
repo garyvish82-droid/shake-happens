@@ -5,7 +5,7 @@ import { useTheme } from '../theme/ThemeProvider';
 interface ScreenProps {
   children: React.ReactNode;
   gap?: number;
-  /** override page background (Rush uses its own) */
+  /** override the page background */
   background?: string;
   /** no top padding — caller draws its own header band */
   flushTop?: boolean;
