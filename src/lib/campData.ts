@@ -8,6 +8,8 @@ export type Camp = {
   eventStart: string;
   eventEnd: string;
   pinLandmark: string;
+  /** camp pin from the sheet; null when missing or not a valid coordinate */
+  pin: { lat: number; lng: number } | null;
   reminderMinutes: number;
 };
 
@@ -93,6 +95,14 @@ const isTrue = (v: string | undefined) => (v ?? '').trim().toUpperCase() === 'TR
 
 // ---------- tabs ----------
 
+function parsePin(latRaw?: string, lngRaw?: string): Camp['pin'] {
+  const lat = Number((latRaw ?? '').replace(',', '.'));
+  const lng = Number((lngRaw ?? '').replace(',', '.'));
+  if (!latRaw || !lngRaw || !Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+  return { lat, lng };
+}
+
 function parseCamp(text: string): Camp {
   const kv: Record<string, string> = {};
   for (const r of parseCsv(text).slice(1)) {
@@ -103,6 +113,7 @@ function parseCamp(text: string): Camp {
     eventStart: normalizeDate(kv.event_start || '') ?? '',
     eventEnd: normalizeDate(kv.event_end || '') ?? '',
     pinLandmark: kv.pin_landmark || '',
+    pin: parsePin(kv.pin_lat, kv.pin_lng),
     reminderMinutes: Number(kv.reminder_minutes) || 30,
   };
 }
@@ -263,3 +274,35 @@ export function shiftHeadline(n: NextShift, now: Date, reminderMinutes: number) 
   if (todayKey(n.shift.startAt) === todayKey(now)) return `Your next shift · today`;
   return `Your next shift · ${prettyDate(n.shift.startAt)}`;
 }
+
+// ---------- walking to a point ----------
+
+const toRad = (d: number) => (d * Math.PI) / 180;
+const toDeg = (r: number) => (r * 180) / Math.PI;
+
+/** Straight-line distance in metres (haversine) */
+export function distanceMeters(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
+  const R = 6371000;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+/** Compass bearing from a to b, 0-359 (0 = north) */
+export function bearingDegrees(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
+  const dLng = toRad(b.lng - a.lng);
+  const y = Math.sin(dLng) * Math.cos(toRad(b.lat));
+  const x = Math.cos(toRad(a.lat)) * Math.sin(toRad(b.lat)) - Math.sin(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.cos(dLng);
+  return (toDeg(Math.atan2(y, x)) + 360) % 360;
+}
+
+export const compassWord = (deg: number) => ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Math.round(deg / 45) % 8];
+
+/** "340 M" under a kilometre, "1.2 KM" above */
+export function formatDistance(m: number) {
+  return m < 1000 ? `${Math.max(1, Math.round(m))} M` : `${(m / 1000).toFixed(m < 10000 ? 1 : 0)} KM`;
+}
+
+/** Walking minutes at about 5 km/h */
+export const walkMinutes = (m: number) => Math.max(1, Math.round(m / 80));

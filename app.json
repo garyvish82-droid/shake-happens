@@ -19,7 +19,13 @@
           "resizeMode": "contain"
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Shake Happens uses your location to point you back to camp."
+        }
+      ]
     ],
     "icon": "./assets/icon.png",
     "ios": {
