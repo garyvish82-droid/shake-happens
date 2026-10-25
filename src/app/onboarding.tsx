@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
+import { Image, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as Location from 'expo-location';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,6 +7,7 @@ import { useTheme } from '../theme/ThemeProvider';
 import { Text } from '../ui/Text';
 import { Icon } from '../ui/Icon';
 import { useCampData } from '../hooks/useCampData';
+import { nameCloseTo, nameMatches } from '../lib/campData';
 
 // The brand-kit splash art. The native splash shows the same picture,
 // so the first screen is a continuation of it.
@@ -72,9 +73,32 @@ export default function Onboarding() {
   // ---------- 2. who are you ----------
   if (step === 'name') {
     const members = (data?.members ?? []).filter((m) => m.active);
-    const q = query.trim().toLowerCase();
-    const list = q ? members.filter((m) => m.name.toLowerCase().includes(q)) : members;
+    const typed = query.trim();
+    const exact = typed ? members.filter((m) => nameMatches(m.name, typed)) : members;
+    // nothing matches: offer the names that are one or two letters away ("Did you mean")
+    const suggestions = typed && exact.length === 0 ? members.filter((m) => nameCloseTo(m.name, typed)) : [];
+    const shown = exact.length > 0 ? exact : suggestions;
     const pickedName = members.find((m) => m.id === picked)?.name;
+    const pickedVisible = !!picked && shown.some((m) => m.id === picked);
+
+    const onChange = (text: string) => {
+      setQuery(text);
+      // a pick that no longer fits what is typed is dropped, so the button never points at a hidden name
+      if (picked) {
+        const m = members.find((x) => x.id === picked);
+        if (m && text.trim() && !nameMatches(m.name, text.trim())) setPicked(null);
+      }
+    };
+
+    const choose = (id: string) => {
+      setPicked(id);
+      Keyboard.dismiss();
+    };
+
+    const clear = () => {
+      setQuery('');
+      setPicked(null);
+    };
 
     return (
       <KeyboardAvoidingView style={{ flex: 1, backgroundColor: palette.bg }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -83,7 +107,11 @@ export default function Onboarding() {
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <Pressable
               accessibilityLabel="Back"
-              onPress={() => setStep('welcome')}
+              onPress={() => {
+                Keyboard.dismiss();
+                setStep('welcome');
+              }}
+              hitSlop={8}
               style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: palette.surface, borderWidth: 1.5, borderColor: palette.border, alignItems: 'center', justifyContent: 'center' }}
             >
               <Icon name="back" size={20} color={palette.text} strokeWidth={2.4} />
@@ -91,10 +119,10 @@ export default function Onboarding() {
             {progress(1)}
           </View>
 
-          <View style={{ gap: 4 }}>
+          <Pressable onPress={Keyboard.dismiss} accessible={false} style={{ gap: 4 }}>
             <Text size={30} weight="heavy" tracking={-0.02}>Who are you?</Text>
-            <Text size={15} weight="semibold" muted>Pick your name so we can show your shifts.</Text>
-          </View>
+            <Text size={15} weight="semibold" muted>Type a few letters of your name, then tap it.</Text>
+          </Pressable>
 
           {!data ? (
             <View style={{ backgroundColor: palette.surface, borderWidth: 1.5, borderColor: palette.border, borderRadius: 16, padding: 16, gap: 12 }}>
@@ -109,29 +137,59 @@ export default function Onboarding() {
             </View>
           ) : (
             <>
-              <TextInput
-                accessibilityLabel="Search your name"
-                value={query}
-                onChangeText={setQuery}
-                placeholder="Type your name"
-                placeholderTextColor={palette.textMuted}
-                autoCorrect={false}
-                autoCapitalize="none"
-                clearButtonMode="while-editing"
-                style={{
-                  height: 56, borderRadius: 16, borderWidth: 1.5, borderColor: palette.border, backgroundColor: palette.surface,
-                  color: palette.text, paddingHorizontal: 16, fontFamily: 'Inter_600SemiBold', fontSize: 17,
-                }}
-              />
-              <ScrollView style={{ flex: 1 }} contentContainerStyle={{ gap: 8, paddingBottom: 24 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-                {list.map((m) => {
+              <View style={{ justifyContent: 'center' }}>
+                <TextInput
+                  accessibilityLabel="Search your name"
+                  value={query}
+                  onChangeText={onChange}
+                  placeholder="Type your name"
+                  placeholderTextColor={palette.textMuted}
+                  autoCorrect={false}
+                  autoCapitalize="none"
+                  returnKeyType="done"
+                  blurOnSubmit
+                  onSubmitEditing={() => {
+                    Keyboard.dismiss();
+                    if (exact.length === 1) setPicked(exact[0].id);
+                  }}
+                  style={{
+                    height: 56, borderRadius: 16, borderWidth: 1.5, borderColor: palette.border, backgroundColor: palette.surface,
+                    color: palette.text, paddingLeft: 16, paddingRight: 96, fontFamily: 'Inter_600SemiBold', fontSize: 17,
+                  }}
+                />
+                {query.length > 0 && (
+                  <Pressable
+                    accessibilityLabel="Clear"
+                    onPress={clear}
+                    hitSlop={8}
+                    style={{ position: 'absolute', right: 8, height: 40, paddingHorizontal: 14, borderRadius: 20, backgroundColor: palette.tealTint, alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <Text size={14} weight="heavy" color={palette.ink}>Clear</Text>
+                  </Pressable>
+                )}
+              </View>
+
+              {exact.length === 0 && (
+                <Text size={15} weight="semibold" muted>
+                  {suggestions.length > 0 ? `No one called "${typed}". Did you mean:` : `No one called "${typed}". Check the spelling, or tap Clear to see everyone.`}
+                </Text>
+              )}
+
+              <ScrollView
+                style={{ flex: 1 }}
+                contentContainerStyle={{ gap: 8, paddingBottom: 24 }}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="on-drag"
+                showsVerticalScrollIndicator={false}
+              >
+                {shown.map((m) => {
                   const on = m.id === picked;
                   return (
                     <Pressable
                       key={m.id}
                       accessibilityRole="radio"
                       accessibilityState={{ checked: on }}
-                      onPress={() => setPicked(m.id)}
+                      onPress={() => choose(m.id)}
                       style={{
                         minHeight: 56, borderRadius: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
                         borderWidth: 1.5, borderColor: on ? palette.ink : palette.border, backgroundColor: on ? palette.ink : palette.surface,
@@ -142,10 +200,13 @@ export default function Onboarding() {
                     </Pressable>
                   );
                 })}
-                {list.length === 0 && (
-                  <Text size={15} weight="semibold" muted style={{ textAlign: 'center', paddingVertical: 24 }}>
-                    No one with that name. Check the spelling, or ask your camp lead to add you to the sheet.
-                  </Text>
+                {shown.length === 0 && typed.length > 0 && (
+                  <Pressable
+                    onPress={clear}
+                    style={{ height: 52, borderRadius: 14, borderWidth: 1.5, borderColor: palette.ink, alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <Text size={16} weight="heavy" color={palette.ink}>Clear and show everyone</Text>
+                  </Pressable>
                 )}
               </ScrollView>
             </>
@@ -154,12 +215,15 @@ export default function Onboarding() {
           <View style={{ paddingBottom: Math.max(insets.bottom, 16) }}>
             <Pressable
               accessibilityRole="button"
-              disabled={!picked}
-              onPress={() => setStep('location')}
-              style={{ height: 60, borderRadius: 30, backgroundColor: picked ? palette.ink : palette.border, alignItems: 'center', justifyContent: 'center' }}
+              disabled={!pickedVisible}
+              onPress={() => {
+                Keyboard.dismiss();
+                setStep('location');
+              }}
+              style={{ height: 60, borderRadius: 30, backgroundColor: pickedVisible ? palette.ink : palette.border, alignItems: 'center', justifyContent: 'center' }}
             >
-              <Text size={18} weight="heavy" color={picked ? palette.onInk : palette.textMuted}>
-                {pickedName ? `Continue as ${pickedName}` : 'Pick your name'}
+              <Text size={18} weight="heavy" color={pickedVisible ? palette.onInk : palette.textMuted} numberOfLines={1}>
+                {pickedVisible && pickedName ? `Continue as ${pickedName}` : 'Tap your name above'}
               </Text>
             </Pressable>
           </View>

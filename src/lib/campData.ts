@@ -315,3 +315,42 @@ export function formatAgo(ts: number, now = Date.now()) {
   if (m < 60 * 24) return `${Math.floor(m / 60)} h ago`;
   return `${Math.floor(m / 1440)} d ago`;
 }
+
+// ---------- name search (onboarding) ----------
+
+/** lower case, no accents, single spaces */
+export function normalizeName(s: string) {
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function editDistance(a: string, b: string) {
+  const prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    let diag = prev[0];
+    prev[0] = i;
+    for (let j = 1; j <= b.length; j++) {
+      const tmp = prev[j];
+      prev[j] = Math.min(prev[j] + 1, prev[j - 1] + 1, diag + (a[i - 1] === b[j - 1] ? 0 : 1));
+      diag = tmp;
+    }
+  }
+  return prev[b.length];
+}
+
+/** Every typed word must start a word of the name ("itamar bar" finds "Itamar Bar Oz") */
+export function nameMatches(name: string, query: string) {
+  const words = normalizeName(name).split(' ');
+  const typed = normalizeName(query).split(' ').filter(Boolean);
+  return typed.every((t) => words.some((w) => w.startsWith(t)));
+}
+
+/** "Did you mean": a typed word is within 1-2 letters of the start of a name word */
+export function nameCloseTo(name: string, query: string) {
+  const words = normalizeName(name).split(' ');
+  const typed = normalizeName(query).split(' ').filter(Boolean);
+  if (typed.length === 0) return false;
+  return typed.every((t) => {
+    const allowed = t.length >= 5 ? 2 : t.length >= 3 ? 1 : 0;
+    return words.some((w) => editDistance(t, w.slice(0, t.length)) <= allowed || editDistance(t, w) <= allowed);
+  });
+}
