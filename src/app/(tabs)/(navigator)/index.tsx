@@ -109,7 +109,7 @@ export default function NavigateScreen() {
           onPress={() => setCalib((v) => !v)}
           style={{ flex: 1, height: 44, borderRadius: 22, borderWidth: 1.5, borderColor: palette.text, backgroundColor: palette.surface, alignItems: 'center', justifyContent: 'center' }}
         >
-          <Text size={14} weight="heavy">Compass ±15° · Calibrate</Text>
+          <Text size={14} weight="heavy" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ paddingHorizontal: 8 }}>Compass ±15° · Calibrate</Text>
         </Pressable>
       </View>
 
@@ -138,8 +138,8 @@ export default function NavigateScreen() {
             <Text mono size={13} weight="bold" tracking={0.08} color={palette.lcdText}>{cur.source}</Text>
           </View>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
-            <Text mono size={38} weight="bold" color={palette.lcdText}>{cur.dist}</Text>
-            <Text mono size={20} weight="bold" color={palette.lcdText}>
+            <Text mono size={34} weight="bold" color={palette.lcdText} numberOfLines={1}>{cur.dist}</Text>
+            <Text mono size={17} weight="bold" color={palette.lcdText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ flexShrink: 1, textAlign: 'right' }}>
               {String(cur.brg).padStart(3, '0')}° {dir} · {cur.mins} MIN
             </Text>
           </View>

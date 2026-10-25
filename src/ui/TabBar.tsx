@@ -65,7 +65,7 @@ export function TabBar({ state, navigateToTab }: TabBarProps) {
               />
             )}
             <Icon name={t.icon} color={color} strokeWidth={active ? 2.4 : 2.2} />
-            <Text size={13} weight={active ? 'heavy' : 'semibold'} color={color}>
+            <Text size={12} weight={active ? 'heavy' : 'semibold'} color={color} numberOfLines={1}>
               {t.label}
             </Text>
           </Pressable>

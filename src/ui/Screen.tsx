@@ -31,6 +31,7 @@ export function Screen({ children, gap = 14, background, flushTop, contentStyle,
       style={{ flex: 1, backgroundColor: bg }}
       contentContainerStyle={content}
       keyboardShouldPersistTaps="handled"
+      alwaysBounceVertical={false}
       showsVerticalScrollIndicator={false}
     >
       {children}
