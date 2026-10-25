@@ -5,7 +5,7 @@ import { useTheme } from '../../../theme/ThemeProvider';
 import { Text } from '../../../ui/Text';
 import { Icon } from '../../../ui/Icon';
 import { Screen } from '../../../ui/Screen';
-import { MEMBER_ID } from '../../../lib/config';
+import { DEFAULT_SIZE, MEMBER_ID } from '../../../lib/config';
 import { useSync } from '../../../hooks/useSync';
 
 const CAMP_ID = 'camp';
@@ -18,15 +18,12 @@ const RECIPES = [
   { id: 'recipe-berry-dust', name: 'Berry Dust', base: 'berries · yogurt' },
   { id: 'recipe-choco-tahini', name: 'Choco Tahini', base: 'cacao · tahini' },
 ];
-const SIZES = ['Small 250 ml', 'Large 400 ml'];
-const SIZE_CODES = ['S', 'L'];
 
-type Entry = { logId: string; recipe: number; size: number };
+type Entry = { logId: string; recipe: number };
 
 export default function LogScreen() {
   const { palette } = useTheme();
   const { db, waiting, refresh: refreshSync, syncNow } = useSync();
-  const [size, setSize] = useState(1);
   const [counts, setCounts] = useState([0, 0, 0, 0]);
   const [history, setHistory] = useState<Entry[]>([]);
   const [total, setTotal] = useState(0);
@@ -66,7 +63,7 @@ export default function LogScreen() {
       const log = await db.logShake({
         camp_id: CAMP_ID,
         recipe_id: RECIPES[recipe].id,
-        size: SIZE_CODES[size],
+        size: DEFAULT_SIZE,
         qty: 1,
         is_alcoholic: 0,
         logged_by: MEMBER_ID,
@@ -74,7 +71,7 @@ export default function LogScreen() {
         voided: 0,
       });
       setCounts((c) => c.map((n, i) => (i === recipe ? n + 1 : n)));
-      setHistory((h) => [...h, { logId: log.id, recipe, size }]);
+      setHistory((h) => [...h, { logId: log.id, recipe }]);
       armReset();
       await refresh();
       syncNow();
@@ -114,23 +111,6 @@ export default function LogScreen() {
         </View>
       </View>
 
-      <View
-        accessibilityRole="radiogroup"
-        style={{ flexDirection: 'row', gap: 6, padding: 4, borderRadius: 16, backgroundColor: palette.surface, borderWidth: 1.5, borderColor: palette.border }}
-      >
-        {SIZES.map((label, i) => (
-          <Pressable
-            key={label}
-            accessibilityRole="radio"
-            accessibilityState={{ checked: i === size }}
-            onPress={() => setSize(i)}
-            style={{ flex: 1, height: 52, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: i === size ? palette.ink : 'transparent' }}
-          >
-            <Text size={16} weight={i === size ? 'heavy' : 'semibold'} color={i === size ? palette.onInk : palette.text}>{label}</Text>
-          </Pressable>
-        ))}
-      </View>
-
       <View style={{ gap: 10 }}>
         {[0, 2].map((first) => (
           <View key={first} style={{ flexDirection: 'row', gap: 10 }}>
@@ -139,7 +119,7 @@ export default function LogScreen() {
               return (
                 <Pressable
                   key={r.id}
-                  accessibilityLabel={`Add one ${r.name}, ${SIZES[size]}`}
+                  accessibilityLabel={`Add one ${r.name}`}
                   onPress={() => add(i)}
                   style={({ pressed }) => ({
                     flex: 1, minHeight: 132, borderRadius: 20, borderWidth: 1.5, borderColor: palette.border,
@@ -177,7 +157,7 @@ export default function LogScreen() {
           style={{ height: 56, borderRadius: 16, backgroundColor: palette.ink, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 16, paddingRight: 6 }}
         >
           <Text size={15} weight="bold" color={palette.onInk}>
-            Logged 1 {RECIPES[last.recipe].name} ({SIZE_CODES[last.size]})
+            Logged 1 {RECIPES[last.recipe].name}
           </Text>
           <Pressable onPress={undo} style={{ height: 44, paddingHorizontal: 16, borderRadius: 12, backgroundColor: palette.accent, alignItems: 'center', justifyContent: 'center' }}>
             <Text size={15} weight="heavy" color={palette.onAccent}>Undo</Text>

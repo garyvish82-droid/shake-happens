@@ -10,3 +10,6 @@ export const MEMBER_ID = 'GA';
 
 /** The shift shown on Home */
 export const CURRENT_SHIFT_ID = 'day3-1600-shake-bar';
+
+/** MVP has a single drink size; stored in events.size */
+export const DEFAULT_SIZE = 'standard';
