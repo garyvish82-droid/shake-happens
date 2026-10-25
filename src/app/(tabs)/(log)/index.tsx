@@ -108,29 +108,36 @@ export default function LogScreen() {
         ))}
       </View>
 
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-        {RECIPES.map((r, i) => (
-          <Pressable
-            key={r.id}
-            accessibilityLabel={`Add one ${r.name}, ${SIZES[size]}`}
-            onPress={() => add(i)}
-            style={({ pressed }) => ({
-              width: '48.5%', height: 132, borderRadius: 20, borderWidth: 1.5, borderColor: palette.border,
-              backgroundColor: palette.surface, padding: 14, justifyContent: 'space-between',
-              transform: [{ scale: pressed ? 0.97 : 1 }],
+      <View style={{ gap: 10 }}>
+        {[0, 2].map((first) => (
+          <View key={first} style={{ flexDirection: 'row', gap: 10 }}>
+            {RECIPES.slice(first, first + 2).map((r, k) => {
+              const i = first + k;
+              return (
+                <Pressable
+                  key={r.id}
+                  accessibilityLabel={`Add one ${r.name}, ${SIZES[size]}`}
+                  onPress={() => add(i)}
+                  style={({ pressed }) => ({
+                    flex: 1, minHeight: 132, borderRadius: 20, borderWidth: 1.5, borderColor: palette.border,
+                    backgroundColor: palette.surface, padding: 14, justifyContent: 'space-between', gap: 8,
+                    transform: [{ scale: pressed ? 0.97 : 1 }],
+                  })}
+                >
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: palette.accent, alignItems: 'center', justifyContent: 'center' }}>
+                      <Text size={24} weight="heavy" color={palette.onAccent} style={{ marginTop: -2 }}>+</Text>
+                    </View>
+                    <Text size={22} weight="bold" mono>{counts[i] ? `+${counts[i]}` : ''}</Text>
+                  </View>
+                  <View style={{ gap: 2 }}>
+                    <Text size={18} weight="heavy" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{r.name}</Text>
+                    <Text size={13} weight="semibold" muted numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{r.base}</Text>
+                  </View>
+                </Pressable>
+              );
             })}
-          >
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: palette.accent, alignItems: 'center', justifyContent: 'center' }}>
-                <Text size={24} weight="heavy" color={palette.onAccent} style={{ marginTop: -2 }}>+</Text>
-              </View>
-              <Text size={22} weight="bold" mono>{counts[i] ? `+${counts[i]}` : ''}</Text>
-            </View>
-            <View style={{ gap: 2 }}>
-              <Text size={18} weight="heavy">{r.name}</Text>
-              <Text size={13} weight="semibold" muted>{r.base}</Text>
-            </View>
-          </Pressable>
+          </View>
         ))}
       </View>
 
