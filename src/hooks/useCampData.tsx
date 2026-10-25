@@ -44,7 +44,11 @@ export function CampDataProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<Status>('loading');
   const [fetchedAt, setFetchedAt] = useState(0);
   const [now, setNow] = useState(() => new Date());
-  const [memberId, setMemberIdState] = useState<string | null>(null);
+  const [storedMemberId, setMemberIdState] = useState<string | null>(null);
+
+  // a saved name that is no longer in the sheet counts as "not picked"
+  const memberId =
+    storedMemberId && (!data || data.members.some((m) => m.id === storedMemberId)) ? storedMemberId : null;
 
   // saved copy first, so the app is useful with no signal
   useEffect(() => {

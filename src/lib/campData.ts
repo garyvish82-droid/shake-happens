@@ -100,8 +100,8 @@ function parseCamp(text: string): Camp {
   }
   return {
     name: kv.name || 'Camp',
-    eventStart: kv.event_start || '',
-    eventEnd: kv.event_end || '',
+    eventStart: normalizeDate(kv.event_start || '') ?? '',
+    eventEnd: normalizeDate(kv.event_end || '') ?? '',
     pinLandmark: kv.pin_landmark || '',
     reminderMinutes: Number(kv.reminder_minutes) || 30,
   };
@@ -113,25 +113,44 @@ function parseMembers(text: string): Member[] {
     .map((o) => ({ id: o.id, name: o.display_name || o.id, role: o.role || 'member', active: isTrue(o.active) }));
 }
 
+/**
+ * Sheets may turn "2026-11-02" into "2/11/26" (day/month/year in an Israeli sheet).
+ * Accept both and always return "YYYY-MM-DD".
+ */
+export function normalizeDate(raw: string): string | null {
+  const v = raw.trim();
+  const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(v);
+  if (iso) return `${iso[1]}-${iso[2].padStart(2, '0')}-${iso[3].padStart(2, '0')}`;
+  const dmy = /^(\d{1,2})[/.](\d{1,2})[/.](\d{2}|\d{4})$/.exec(v);
+  if (dmy) {
+    const year = dmy[3].length === 2 ? `20${dmy[3]}` : dmy[3];
+    return `${year}-${dmy[2].padStart(2, '0')}-${dmy[1].padStart(2, '0')}`;
+  }
+  return null;
+}
+
 function at(date: string, time: string): Date | null {
-  const d = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
-  const t = /^(\d{1,2}):(\d{2})$/.exec(time);
+  const day = normalizeDate(date);
+  const d = day ? /^(\d{4})-(\d{2})-(\d{2})$/.exec(day) : null;
+  const t = /^(\d{1,2}):(\d{2})(?::\d{2})?$/.exec(time.trim());
   if (!d || !t) return null;
   return new Date(Number(d[1]), Number(d[2]) - 1, Number(d[3]), Number(t[1]), Number(t[2]));
 }
 
-/** Only published rows with a valid date and time; a shift that ends "before" it starts runs past midnight */
+const HIDDEN_STATUS = ['draft', 'hidden', 'cancelled', 'canceled'];
+
+/** Rows with a valid date and time, except drafts and cancelled; a shift that ends "before" it starts runs past midnight */
 function parseShifts(text: string): Shift[] {
   const out: Shift[] = [];
   for (const o of toObjects(text)) {
-    if (o.status.toLowerCase() !== 'published') continue;
+    if (HIDDEN_STATUS.includes(o.status.toLowerCase())) continue;
     const startAt = at(o.date, o.start);
     const endAt = at(o.date, o.end);
     if (!startAt || !endAt) continue;
     if (endAt <= startAt) endAt.setDate(endAt.getDate() + 1);
     out.push({
       id: o.shift_id,
-      date: o.date,
+      date: normalizeDate(o.date) ?? o.date,
       start: o.start,
       end: o.end,
       type: o.type,
@@ -213,21 +232,27 @@ export function nextShiftFor(shifts: Shift[], memberId: string | null, now: Date
 
 /** The bar shift running right now */
 export function barNow(shifts: Shift[], now: Date): Shift | null {
-  return shifts.find((s) => s.type === 'bar' && s.startAt <= now && now < s.endAt) ?? null;
+  const isBar = (s: Shift) => s.type.toLowerCase() === 'bar' || s.location.toLowerCase() === 'bar';
+  return shifts.find((s) => isBar(s) && s.startAt <= now && now < s.endAt) ?? null;
 }
 
-/** "Day 3" while the event runs; otherwise when it starts or that it ended */
-export function eventLabel(camp: Camp, now: Date): string {
+/** "Day 3" while the event runs; otherwise when it starts or that it ended. Skips the camp name when it is just the app name. */
+export function eventLabel(camp: Camp, now: Date, appName = 'Shake Happens'): string {
+  const name = camp.name && camp.name.toLowerCase() !== appName.toLowerCase() ? camp.name : '';
   const start = at(camp.eventStart, '00:00');
   const end = at(camp.eventEnd, '23:59');
-  if (!start || !end) return camp.name;
-  if (now < start) {
-    const days = Math.ceil((start.getTime() - now.getTime()) / 86400000);
-    return `${camp.name} · starts in ${days} ${days === 1 ? 'day' : 'days'}`;
+  let phase = '';
+  if (start && end) {
+    if (now < start) {
+      const days = Math.ceil((start.getTime() - now.getTime()) / 86400000);
+      phase = `starts in ${days} ${days === 1 ? 'day' : 'days'}`;
+    } else if (now > end) {
+      phase = 'event ended';
+    } else {
+      phase = `Day ${Math.floor((now.getTime() - start.getTime()) / 86400000) + 1}`;
+    }
   }
-  if (now > end) return `${camp.name} · event ended`;
-  const day = Math.floor((now.getTime() - start.getTime()) / 86400000) + 1;
-  return `${camp.name} · Day ${day}`;
+  return [name, phase].filter(Boolean).join(' · ') || appName;
 }
 
 /** Headline of the shift card: minutes away inside the reminder window, otherwise the day */

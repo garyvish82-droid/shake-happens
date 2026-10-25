@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Modal, Pressable, View } from 'react-native';
+import { Modal, Pressable, ScrollView, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useTheme } from '../../../theme/ThemeProvider';
 import { Text } from '../../../ui/Text';
@@ -203,8 +203,8 @@ export default function HomeScreen() {
               <Text size={13} weight="bold" muted upper tracking={0.08} numberOfLines={1}>
                 {bar ? `On the bar · until ${bar.end}` : 'The bar'}
               </Text>
-              <Text size={18} weight="bold" numberOfLines={1}>
-                {bar ? crewNames(data.members, bar.memberIds) : 'Bar is closed right now'}
+              <Text size={18} weight="bold" numberOfLines={2}>
+                {bar ? crewNames(data.members, bar.memberIds) : 'Bar closed right now'}
               </Text>
             </View>
             <View style={{ alignItems: 'flex-end', flexShrink: 0, marginLeft: 12 }}>
@@ -235,6 +235,7 @@ export default function HomeScreen() {
             style={{ backgroundColor: palette.bg, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 36, gap: 10 }}
           >
             <Text size={22} weight="heavy">Who are you?</Text>
+            <ScrollView style={{ maxHeight: 420 }} contentContainerStyle={{ gap: 10 }} showsVerticalScrollIndicator>
             {(data?.members ?? []).filter((m) => m.active).map((m) => {
               const on = m.id === memberId;
               return (
@@ -257,6 +258,7 @@ export default function HomeScreen() {
                 </Pressable>
               );
             })}
+            </ScrollView>
             {!data && <Text size={15} muted>The crew list has not loaded yet.</Text>}
             {showInsights && (
               <Pressable
