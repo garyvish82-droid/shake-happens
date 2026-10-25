@@ -8,12 +8,8 @@ import { Screen } from '../../../ui/Screen';
 import { useCampData } from '../../../hooks/useCampData';
 
 // Sample targets, same as the design prototype (live GPS/compass comes later)
-const TARGETS = [
-  { id: 'camp', name: 'Camp', brg: 43, dist: '340 M', mins: 5, source: 'PINNED' },
-  { id: 'dor', name: 'Dor', brg: 303, dist: '190 M', mins: 3, source: 'MESH · 1 MIN AGO' },
-  { id: 'maya', name: 'Maya', brg: 160, dist: '300 M', mins: 4, source: '4G · NOW' },
-  { id: 'lior', name: 'Lior', brg: 238, dist: '470 M', mins: 7, source: 'MESH · 6 MIN AGO' },
-];
+// Sample reading, same as the design prototype (live GPS/compass comes later)
+const CAMP_TARGET = { id: 'camp', name: 'Camp', brg: 43, dist: '340 M', mins: 5, source: 'PINNED' };
 const DIRS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
 const HEADING = 0;
 const SIZE = 292;
@@ -22,11 +18,10 @@ const C = SIZE / 2;
 export default function NavigateScreen() {
   const { palette, theme } = useTheme();
   const { data } = useCampData();
-  const [target, setTarget] = useState('camp');
   const [calib, setCalib] = useState(false);
   const night = theme === 'dark';
 
-  const cur = TARGETS.find((t) => t.id === target) ?? TARGETS[0];
+  const cur = CAMP_TARGET;
   const dir = DIRS[Math.round(cur.brg / 45) % 8];
   const dial = -HEADING;
 
@@ -147,28 +142,6 @@ export default function NavigateScreen() {
           </View>
         </View>
       )}
-
-      {/* target picker */}
-      <View accessibilityRole="radiogroup" style={{ flexDirection: 'row', gap: 6 }}>
-        {TARGETS.map((t) => {
-          const on = t.id === target;
-          return (
-            <Pressable
-              key={t.id}
-              accessibilityRole="radio"
-              accessibilityState={{ checked: on }}
-              onPress={() => setTarget(t.id)}
-              style={{
-                flex: 1, height: 56, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
-                borderWidth: 1.5, borderColor: on ? palette.ink : palette.border,
-                backgroundColor: on ? palette.ink : palette.surface,
-              }}
-            >
-              <Text size={16} weight={on ? 'heavy' : 'semibold'} color={on ? palette.onInk : palette.text}>{t.name}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
     </Screen>
   );
 }
