@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useTheme } from '../../../theme/ThemeProvider';
@@ -9,6 +9,8 @@ import { MEMBER_ID } from '../../../lib/config';
 import { useSync } from '../../../hooks/useSync';
 
 const CAMP_ID = 'camp';
+/** how long the "Logged… Undo" bar and +N badges stay on screen */
+const CONFIRM_MS = 5000;
 
 const RECIPES = [
   { id: 'recipe-banana-date', name: 'Banana Date', base: 'oat milk · dates' },
@@ -28,6 +30,23 @@ export default function LogScreen() {
   const [counts, setCounts] = useState([0, 0, 0, 0]);
   const [history, setHistory] = useState<Entry[]>([]);
   const [total, setTotal] = useState(0);
+
+  const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearConfirmation = useCallback(() => {
+    setCounts([0, 0, 0, 0]);
+    setHistory([]);
+  }, []);
+
+  // after a quiet moment, go back to the normal screen
+  const armReset = useCallback(() => {
+    if (resetTimer.current) clearTimeout(resetTimer.current);
+    resetTimer.current = setTimeout(clearConfirmation, CONFIRM_MS);
+  }, [clearConfirmation]);
+
+  useEffect(() => () => {
+    if (resetTimer.current) clearTimeout(resetTimer.current);
+  }, []);
 
   const refresh = useCallback(async () => {
     if (!db) return;
@@ -56,6 +75,7 @@ export default function LogScreen() {
       });
       setCounts((c) => c.map((n, i) => (i === recipe ? n + 1 : n)));
       setHistory((h) => [...h, { logId: log.id, recipe, size }]);
+      armReset();
       await refresh();
       syncNow();
     } catch (error) {
@@ -66,11 +86,14 @@ export default function LogScreen() {
   const last = history[history.length - 1];
 
   const undo = async () => {
-    if (!db || !last) return;
+    if (!last) return;
+    // update the screen first so Undo always responds
+    setCounts((c) => c.map((n, i) => (i === last.recipe ? Math.max(0, n - 1) : n)));
+    setHistory((h) => h.slice(0, -1));
+    armReset();
+    if (!db) return;
     try {
       await db.voidShake(last.logId, CAMP_ID);
-      setCounts((c) => c.map((n, i) => (i === last.recipe ? n - 1 : n)));
-      setHistory((h) => h.slice(0, -1));
       await refresh();
       syncNow();
     } catch (error) {
