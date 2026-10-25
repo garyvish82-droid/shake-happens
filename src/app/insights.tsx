@@ -115,11 +115,11 @@ export default function InsightsScreen() {
         <Text size={13} weight="heavy" upper tracking={0.08} color={palette.onInk}>For next year</Text>
         <View style={{ gap: 2 }}>
           <Text size={15} weight="bold" color={palette.onInk}>Bring ~2× oat milk and dates</Text>
-          <Text size={13} color={palette.onInk}>Ran out 2 days · 6 votes on feedback</Text>
+          <Text size={13} color={palette.onInk}>Ran out 2 days</Text>
         </View>
         <View style={{ gap: 2 }}>
           <Text size={15} weight="bold" color={palette.onInk}>Third person on 18:00–20:00, Thu–Sat</Text>
-          <Text size={13} color={palette.onInk}>9 rush calls in that slot · 9 votes</Text>
+          <Text size={13} color={palette.onInk}>9 rush calls in that slot</Text>
         </View>
       </View>
     </Screen>

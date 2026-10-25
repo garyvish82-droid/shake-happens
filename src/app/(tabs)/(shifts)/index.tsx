@@ -4,6 +4,7 @@ import { useTheme } from '../../../theme/ThemeProvider';
 import { Text } from '../../../ui/Text';
 import { Icon } from '../../../ui/Icon';
 import { Screen } from '../../../ui/Screen';
+import { useSync } from '../../../hooks/useSync';
 
 const DOWS = ['Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const CREWS = [
@@ -23,6 +24,7 @@ const TIMES = [
 
 export default function ShiftsScreen() {
   const { palette } = useTheme();
+  const { lastSync } = useSync();
   const [sel, setSel] = useState(2);
   const [onlyMine, setOnlyMine] = useState(false);
   const [swapped, setSwapped] = useState<Record<string, boolean>>({});
@@ -71,7 +73,7 @@ export default function ShiftsScreen() {
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
         <View style={{ gap: 2, flexShrink: 1 }}>
           <Text size={30} weight="heavy" tracking={-0.02}>Shifts</Text>
-          <Text size={13} weight="semibold" muted>Saved on your phone · synced 14 min ago</Text>
+          <Text size={13} weight="semibold" muted>Saved on your phone · {lastSync === 0 ? 'not synced yet' : `synced ${Math.max(0, Math.round((Date.now() - lastSync) / 60000))} min ago`}</Text>
         </View>
         <Pressable
           accessibilityRole="button"

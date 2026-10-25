@@ -19,7 +19,6 @@ export default function TabsLayout() {
         <Tabs.Screen name="(home)" options={{ title: 'Home' }} />
         <Tabs.Screen name="(shifts)" options={{ title: 'Shifts' }} />
         <Tabs.Screen name="(log)" options={{ title: 'Log' }} />
-        <Tabs.Screen name="(feedback)" options={{ title: 'Feedback' }} />
         <Tabs.Screen name="(navigator)" options={{ title: 'Find camp' }} />
       </Tabs>
     </>

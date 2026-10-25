@@ -5,7 +5,8 @@ import { useTheme } from '../../../theme/ThemeProvider';
 import { Text } from '../../../ui/Text';
 import { Icon } from '../../../ui/Icon';
 import { Screen } from '../../../ui/Screen';
-import { useDatabase } from '../../../hooks/useDatabase';
+import { useSync } from '../../../hooks/useSync';
+import { CURRENT_SHIFT_ID, MEMBER_ID } from '../../../lib/config';
 
 type ShiftMode = 'idle' | 'confirmed' | 'swap';
 
@@ -17,21 +18,21 @@ function minutesAgo(ts: number) {
 export default function HomeScreen() {
   const { palette, theme, setTheme } = useTheme();
   const router = useRouter();
-  const { db } = useDatabase();
+  const { db, waiting, lastSync, refresh, syncNow } = useSync();
   const [mode, setMode] = useState<ShiftMode>('idle');
-  const [waiting, setWaiting] = useState(0);
-  const [lastSync, setLastSync] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
-      if (!db) return;
-      (async () => {
-        const pending = await db.getPendingOutbox();
-        setWaiting(pending.length);
-        setLastSync(await db.getLastSyncedAt());
-      })();
-    }, [db])
+      refresh();
+    }, [refresh])
   );
+
+  const confirm = async () => {
+    setMode('confirmed');
+    if (!db) return;
+    await db.confirmShift(CURRENT_SHIFT_ID, MEMBER_ID);
+    await syncNow();
+  };
 
   const isDay = theme === 'light';
   const syncText = lastSync === 0 ? 'Not synced yet' : `Synced ${minutesAgo(lastSync)}`;
@@ -112,7 +113,7 @@ export default function HomeScreen() {
         {mode === 'idle' && (
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <Pressable
-              onPress={() => setMode('confirmed')}
+              onPress={confirm}
               style={{ flex: 1, height: 56, borderRadius: 14, backgroundColor: palette.ink, alignItems: 'center', justifyContent: 'center' }}
             >
               <Text size={17} weight="heavy" color={palette.onInk}>I'm on it</Text>
@@ -186,12 +187,6 @@ export default function HomeScreen() {
           style={{ flex: 1, height: 56, borderRadius: 16, backgroundColor: palette.surface, borderWidth: 1.5, borderColor: palette.border, alignItems: 'center', justifyContent: 'center' }}
         >
           <Text size={16} weight="heavy">+ Log shakes</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => router.navigate('/(tabs)/(feedback)')}
-          style={{ flex: 1, height: 56, borderRadius: 16, backgroundColor: palette.surface, borderWidth: 1.5, borderColor: palette.border, alignItems: 'center', justifyContent: 'center' }}
-        >
-          <Text size={16} weight="bold">Leave feedback</Text>
         </Pressable>
       </View>
     </Screen>

@@ -7,7 +7,7 @@ import * as SQLite from 'expo-sqlite';
 import { SCHEMA, type ShakeLog, type OutboxEntry } from './schema';
 import { generateUUID } from '../uuid';
 
-const DB_NAME = 'shake-happens.db';
+const DB_NAME = 'shake-happens-v1.db';
 
 export class Database {
   private db: SQLite.SQLiteDatabase | null = null;
@@ -117,6 +117,39 @@ export class Database {
       [now, id]
     );
     await this.queueOutbox('shake_logs', 'UPDATE', id, { id, camp_id: campId, voided: 1, updated_at: now });
+  }
+
+  // Stable per-install id; sent with every event
+  async getDeviceId(): Promise<string> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    const row = await this.db.getFirstAsync<{ value: string }>(
+      'SELECT value FROM sync_state WHERE key = ?',
+      ['device_id']
+    );
+    if (row) return row.value;
+
+    const id = generateUUID();
+    await this.db.runAsync(
+      'INSERT INTO sync_state (key, value, updated_at) VALUES (?, ?, ?)',
+      ['device_id', id, Date.now()]
+    );
+    return id;
+  }
+
+  // "I'm on it": confirm a shift (queued, synced when online)
+  async confirmShift(shiftId: string, loggedBy: string) {
+    if (!this.db) throw new Error('Database not initialized');
+
+    const id = generateUUID();
+    await this.queueOutbox('shifts', 'INSERT', id, {
+      id,
+      kind: 'shift_confirm',
+      shift_id: shiftId,
+      logged_by: loggedBy,
+      client_at: Date.now(),
+    });
+    return id;
   }
 
   // Outbox management (for offline sync)

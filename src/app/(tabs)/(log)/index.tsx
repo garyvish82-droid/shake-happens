@@ -1,13 +1,14 @@
 import { useCallback, useState } from 'react';
 import { Pressable, View } from 'react-native';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { useTheme } from '../../../theme/ThemeProvider';
 import { Text } from '../../../ui/Text';
 import { Icon } from '../../../ui/Icon';
 import { Screen } from '../../../ui/Screen';
-import { useDatabase } from '../../../hooks/useDatabase';
+import { MEMBER_ID } from '../../../lib/config';
+import { useSync } from '../../../hooks/useSync';
 
-const CAMP_ID = 'test-camp';
+const CAMP_ID = 'camp';
 
 const RECIPES = [
   { id: 'recipe-banana-date', name: 'Banana Date', base: 'oat milk · dates' },
@@ -22,19 +23,17 @@ type Entry = { logId: string; recipe: number; size: number };
 
 export default function LogScreen() {
   const { palette } = useTheme();
-  const router = useRouter();
-  const { db } = useDatabase();
+  const { db, waiting, refresh: refreshSync, syncNow } = useSync();
   const [size, setSize] = useState(1);
   const [counts, setCounts] = useState([0, 0, 0, 0]);
   const [history, setHistory] = useState<Entry[]>([]);
   const [total, setTotal] = useState(0);
-  const [waiting, setWaiting] = useState(0);
 
   const refresh = useCallback(async () => {
     if (!db) return;
     setTotal(await db.getTodayShakeCount(CAMP_ID));
-    setWaiting((await db.getPendingOutbox()).length);
-  }, [db]);
+    await refreshSync();
+  }, [db, refreshSync]);
 
   useFocusEffect(
     useCallback(() => {
@@ -51,13 +50,14 @@ export default function LogScreen() {
         size: SIZE_CODES[size],
         qty: 1,
         is_alcoholic: 0,
-        logged_by: 'me',
+        logged_by: MEMBER_ID,
         logged_at: Date.now(),
         voided: 0,
       });
       setCounts((c) => c.map((n, i) => (i === recipe ? n + 1 : n)));
       setHistory((h) => [...h, { logId: log.id, recipe, size }]);
       await refresh();
+      syncNow();
     } catch (error) {
       console.error('Failed to log shake:', error);
     }
@@ -72,6 +72,7 @@ export default function LogScreen() {
       setCounts((c) => c.map((n, i) => (i === last.recipe ? n - 1 : n)));
       setHistory((h) => h.slice(0, -1));
       await refresh();
+      syncNow();
     } catch (error) {
       console.error('Failed to undo shake:', error);
     }
@@ -153,12 +154,6 @@ export default function LogScreen() {
           </Pressable>
         </View>
       )}
-      <Pressable
-        onPress={() => router.navigate('/(tabs)/(feedback)')}
-        style={{ height: 48, borderRadius: 14, borderWidth: 1.5, borderColor: palette.border, alignItems: 'center', justifyContent: 'center' }}
-      >
-        <Text size={15} weight="bold">Something off with this batch?</Text>
-      </Pressable>
     </Screen>
   );
 }

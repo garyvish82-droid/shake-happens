@@ -8,7 +8,6 @@ const TABS: { route: string; label: string; icon: IconName }[] = [
   { route: '(home)', label: 'Home', icon: 'home' },
   { route: '(shifts)', label: 'Shifts', icon: 'calendar' },
   { route: '(log)', label: 'Log', icon: 'log' },
-  { route: '(feedback)', label: 'Feedback', icon: 'chat' },
   { route: '(navigator)', label: 'Find camp', icon: 'compass' },
 ];
 

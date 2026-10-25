@@ -14,6 +14,7 @@ import {
 } from '@expo-google-fonts/jetbrains-mono';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import { SyncProvider } from '../hooks/useSync';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -54,7 +55,9 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <RootStack />
+        <SyncProvider>
+          <RootStack />
+        </SyncProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );
