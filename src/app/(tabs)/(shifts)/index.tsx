@@ -27,7 +27,6 @@ export default function ShiftsScreen() {
   const { lastSync } = useSync();
   const [sel, setSel] = useState(2);
   const [onlyMine, setOnlyMine] = useState(false);
-  const [swapped, setSwapped] = useState<Record<string, boolean>>({});
 
   const all = TIMES.map((t, i) => {
     const mine = sel === 2 && i === 2;
@@ -114,7 +113,6 @@ export default function ShiftsScreen() {
 
       <View style={{ gap: 10 }}>
         {shifts.map((s) => {
-          const sent = !!swapped[s.key];
           return (
             <View
               key={s.key}
@@ -139,17 +137,6 @@ export default function ShiftsScreen() {
                 <Text size={17} weight="bold">{s.crew}</Text>
                 <Text size={14} weight="semibold" muted>Floater: {s.floater}</Text>
               </View>
-              {s.mine && !sent && (
-                <Pressable
-                  onPress={() => setSwapped((p) => ({ ...p, [s.key]: true }))}
-                  style={{ height: 56, paddingHorizontal: 12, borderRadius: 12, backgroundColor: palette.accent, alignItems: 'center', justifyContent: 'center' }}
-                >
-                  <Text size={14} weight="heavy" color={palette.onAccent} style={{ textAlign: 'center' }}>{'Ask to\nswap'}</Text>
-                </Pressable>
-              )}
-              {s.mine && sent && (
-                <Text size={12} weight="bold" muted style={{ width: 72, textAlign: 'right' }}>Swap asked · queued</Text>
-              )}
             </View>
           );
         })}

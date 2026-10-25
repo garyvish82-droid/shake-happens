@@ -8,7 +8,7 @@ import { Screen } from '../../../ui/Screen';
 import { useSync } from '../../../hooks/useSync';
 import { CURRENT_SHIFT_ID, MEMBER_ID } from '../../../lib/config';
 
-type ShiftMode = 'idle' | 'confirmed' | 'swap';
+type ShiftMode = 'idle' | 'confirmed';
 
 function minutesAgo(ts: number) {
   const m = Math.max(0, Math.round((Date.now() - ts) / 60000));
@@ -111,20 +111,12 @@ export default function HomeScreen() {
         </View>
 
         {mode === 'idle' && (
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <Pressable
-              onPress={confirm}
-              style={{ flex: 1, height: 56, borderRadius: 14, backgroundColor: palette.ink, alignItems: 'center', justifyContent: 'center' }}
-            >
-              <Text size={17} weight="heavy" color={palette.onInk}>I'm on it</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => setMode('swap')}
-              style={{ height: 56, paddingHorizontal: 16, borderRadius: 14, borderWidth: 2, borderColor: palette.onAccent, alignItems: 'center', justifyContent: 'center' }}
-            >
-              <Text size={16} weight="heavy" color={palette.onAccent}>Ask to swap</Text>
-            </Pressable>
-          </View>
+          <Pressable
+            onPress={confirm}
+            style={{ height: 56, borderRadius: 14, backgroundColor: palette.ink, alignItems: 'center', justifyContent: 'center' }}
+          >
+            <Text size={17} weight="heavy" color={palette.onInk}>I'm on it</Text>
+          </Pressable>
         )}
         {mode === 'confirmed' && (
           <View
@@ -135,36 +127,27 @@ export default function HomeScreen() {
             <Text size={16} weight="heavy" color={palette.onInk}>Confirmed — see you there</Text>
           </View>
         )}
-        {mode === 'swap' && (
-          <View
-            accessibilityRole="alert"
-            style={{ minHeight: 56, borderRadius: 14, borderWidth: 2, borderColor: palette.onAccent, paddingHorizontal: 12, paddingVertical: 8, justifyContent: 'center' }}
-          >
-            <Text size={15} weight="bold" color={palette.onAccent}>Swap request queued</Text>
-            <Text size={13} weight="semibold" color={palette.onAccent}>Sends to Noa & Tal as soon as you have signal</Text>
-          </View>
-        )}
       </View>
 
       {/* on the bar now */}
       <View style={{ backgroundColor: palette.surface, borderWidth: 1.5, borderColor: palette.border, borderRadius: 20, paddingVertical: 14, paddingHorizontal: 16, gap: 12 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <View style={{ gap: 2 }}>
-            <Text size={13} weight="bold" muted upper tracking={0.08}>On the bar · until 16:00</Text>
-            <Text size={18} weight="bold">Itay & Shira</Text>
+          <View style={{ gap: 2, flex: 1, minWidth: 0 }}>
+            <Text size={13} weight="bold" muted upper tracking={0.08} numberOfLines={1}>On the bar · until 16:00</Text>
+            <Text size={18} weight="bold" numberOfLines={1}>Itay & Shira</Text>
           </View>
-          <View style={{ alignItems: 'flex-end' }}>
+          <View style={{ alignItems: 'flex-end', flexShrink: 0, marginLeft: 12 }}>
             <Text size={26} weight="bold" mono color={palette.teal}>42</Text>
             <Text size={13} weight="semibold" muted>shakes today</Text>
           </View>
         </View>
         <View style={{ height: 1.5, backgroundColor: palette.border }} />
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <View style={{ gap: 2, flexShrink: 1 }}>
-            <Text size={13} weight="bold" muted upper tracking={0.08}>Floater · almost-free duty</Text>
-            <Text size={18} weight="bold">Dor · 2 min away</Text>
+          <View style={{ gap: 2, flex: 1, minWidth: 0 }}>
+            <Text size={13} weight="bold" muted upper tracking={0.08} numberOfLines={1}>Floater · on duty</Text>
+            <Text size={18} weight="bold" numberOfLines={1}>Dor · 2 min away</Text>
           </View>
-          <View style={{ height: 32, paddingHorizontal: 10, borderRadius: 16, backgroundColor: palette.tealTint, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <View style={{ flexShrink: 0, marginLeft: 12, height: 32, paddingHorizontal: 10, borderRadius: 16, backgroundColor: palette.tealTint, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <Icon name="check" size={14} color={palette.teal} strokeWidth={3} />
             <Text size={14} weight="heavy" color={palette.teal}>Ready</Text>
           </View>

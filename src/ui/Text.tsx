@@ -42,6 +42,7 @@ export function Text({
   const { palette } = useTheme();
   return (
     <RNText
+      maxFontSizeMultiplier={1.15}
       {...props}
       style={[
         {
