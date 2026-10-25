@@ -1,6 +1,7 @@
 /**
  * Design tokens for Shake Happens — from the Midburn camp app design.
- * Day: warm cream + amber. Night: deep indigo + violet.
+ * Day: Shake Happens brand kit (sand + white, Deep Blue text, Blue buttons, Sun Yellow focus).
+ * Night: deep indigo + violet (unchanged).
  */
 
 export const brand = {
@@ -14,25 +15,23 @@ export const brand = {
 } as const;
 
 export const dayPalette = {
-  bg: '#F3EEDC',
-  surface: '#FFFDF6',
-  nav: '#FBF7EA',
-  border: '#7A7452',
-  text: '#161A0C',
-  textMuted: '#45482F',
-  accent: '#FFB23F',
-  onAccent: '#241A00',
-  ink: '#161A0C',
-  onInk: '#FFFDF6',
-  teal: '#08606F',
-  tealTint: '#D3ECEF',
-  track: '#E9E2C8',
-  barMuted: '#8A8362',
-  lcdBg: '#D6E4BE',
-  lcdText: '#10180A',
-  rushBg: '#FFC86B',
-  rushText: '#261C02',
-  avatar: '#7FD3E2',
+  bg: '#FFF0DB', // sand page
+  surface: '#FFFFFF', // cards
+  nav: '#FFFFFF',
+  border: 'rgba(8, 42, 84, 0.22)', // Deep Blue at ~22%, drawn 1.5 px
+  text: '#082A54', // Deep Blue: 14:1 on white
+  textMuted: '#4A5F7A', // 6.5:1 on white, 5.8:1 on sand
+  accent: '#FFC83D', // Sun Yellow: the one focus colour (Deep Blue text 9:1)
+  onAccent: '#082A54',
+  ink: '#0369B8', // primary buttons and selected states (white text 5.7:1)
+  onInk: '#FFFFFF',
+  teal: '#0369B8', // numbers, icons, positive accents
+  tealTint: '#E6F3FD',
+  track: '#E6F3FD', // compass face, bar tracks
+  barMuted: '#9DB7D1',
+  lcdBg: '#E6F3FD',
+  lcdText: '#082A54',
+  avatar: '#BFE4FA',
   glow: 'transparent',
 } as const;
 
@@ -53,8 +52,6 @@ export const nightPalette = {
   barMuted: '#6B74BC',
   lcdBg: '#2B2266',
   lcdText: '#E2D4FF',
-  rushBg: '#141A3A',
-  rushText: '#EEF0FF',
   avatar: '#7FD8FF',
   glow: 'rgba(196,155,255,0.8)',
 } as const;
@@ -67,7 +64,7 @@ export const radius = { sm: 12, md: 20, lg: 32, pill: 999, chip: 11, control: 12
 export const touchTarget = { primary: 56, secondary: 44, nav: 84 } as const;
 export const fontSize = { xs: 13, sm: 15, base: 16, lg: 18, xl: 22, '2xl': 28, '3xl': 32, '4xl': 38 } as const;
 export const fontWeight = { regular: '400', semibold: '600', bold: '700' } as const;
-export const fonts = { heading: 'BricolageGrotesque', body: 'BricolageGrotesque', mono: 'JetBrainsMono' } as const;
+export const fonts = { heading: 'Poppins', body: 'Inter', night: 'BricolageGrotesque' } as const;
 
 export type Theme = 'light' | 'dark';
 export type Palette = { [K in keyof typeof dayPalette]: string };

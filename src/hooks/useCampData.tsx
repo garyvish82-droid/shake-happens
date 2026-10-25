@@ -16,6 +16,9 @@ interface CampDataContextType {
   refresh: () => Promise<void>;
   memberId: string | null;
   setMemberId: (id: string) => Promise<void>;
+  /** null while the saved value is still loading */
+  onboarded: boolean | null;
+  completeOnboarding: () => Promise<void>;
 }
 
 const CampDataContext = createContext<CampDataContextType | undefined>(undefined);
@@ -23,6 +26,7 @@ const CampDataContext = createContext<CampDataContextType | undefined>(undefined
 const CACHE_KEY = 'camp_data_raw';
 const CACHE_AT_KEY = 'camp_data_at';
 const MEMBER_KEY = 'member_id';
+const ONBOARDED_KEY = 'onboarded_v1';
 
 async function fetchTab(url: string): Promise<string> {
   const ctrl = new AbortController();
@@ -45,6 +49,7 @@ export function CampDataProvider({ children }: { children: React.ReactNode }) {
   const [fetchedAt, setFetchedAt] = useState(0);
   const [now, setNow] = useState(() => new Date());
   const [storedMemberId, setMemberIdState] = useState<string | null>(null);
+  const [onboarded, setOnboarded] = useState<boolean | null>(null);
 
   // a saved name that is no longer in the sheet counts as "not picked"
   const memberId =
@@ -65,6 +70,7 @@ export function CampDataProvider({ children }: { children: React.ReactNode }) {
         }
       }
       setMemberIdState(await db.getValue(MEMBER_KEY));
+      setOnboarded((await db.getValue(ONBOARDED_KEY)) === '1');
     })();
   }, [db]);
 
@@ -117,9 +123,14 @@ export function CampDataProvider({ children }: { children: React.ReactNode }) {
     [db]
   );
 
+  const completeOnboarding = useCallback(async () => {
+    setOnboarded(true);
+    if (db) await db.setValue(ONBOARDED_KEY, '1');
+  }, [db]);
+
   const value = useMemo(
-    () => ({ data, status, fetchedAt, now, refresh, memberId, setMemberId }),
-    [data, status, fetchedAt, now, refresh, memberId, setMemberId]
+    () => ({ data, status, fetchedAt, now, refresh, memberId, setMemberId, onboarded, completeOnboarding }),
+    [data, status, fetchedAt, now, refresh, memberId, setMemberId, onboarded, completeOnboarding]
   );
 
   return <CampDataContext.Provider value={value}>{children}</CampDataContext.Provider>;

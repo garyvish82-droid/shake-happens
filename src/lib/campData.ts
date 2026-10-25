@@ -306,3 +306,12 @@ export function formatDistance(m: number) {
 
 /** Walking minutes at about 5 km/h */
 export const walkMinutes = (m: number) => Math.max(1, Math.round(m / 80));
+
+/** "just now", "5 min ago", "3 h ago", "2 d ago" */
+export function formatAgo(ts: number, now = Date.now()) {
+  const m = Math.max(0, Math.round((now - ts) / 60000));
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m} min ago`;
+  if (m < 60 * 24) return `${Math.floor(m / 60)} h ago`;
+  return `${Math.floor(m / 1440)} d ago`;
+}

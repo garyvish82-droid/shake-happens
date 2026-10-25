@@ -9,19 +9,14 @@ import { useSync } from '../../../hooks/useSync';
 import { useCampData } from '../../../hooks/useCampData';
 import { CAMP_ID } from '../../../lib/config';
 import {
-  barNow, crewNames, eventLabel, memberName, nextShiftFor, shiftHeadline, titleCase,
+  barNow, crewNames, eventLabel, formatAgo, memberName, nextShiftFor, shiftHeadline, titleCase,
 } from '../../../lib/campData';
-
-function minutesAgo(ts: number) {
-  const m = Math.max(0, Math.round((Date.now() - ts) / 60000));
-  return m < 1 ? 'just now' : `${m} min ago`;
-}
 
 export default function HomeScreen() {
   const { palette, theme, setTheme } = useTheme();
   const router = useRouter();
   const { db, waiting, lastSync, refresh, syncNow } = useSync();
-  const { data, now, memberId, setMemberId, status, refresh: refreshCamp } = useCampData();
+  const { data, now, memberId, setMemberId, status, refresh: refreshCamp, fetchedAt } = useCampData();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [confirmed, setConfirmed] = useState<Record<string, boolean>>({});
   const [todayCount, setTodayCount] = useState(0);
@@ -55,7 +50,8 @@ export default function HomeScreen() {
   };
 
   const isDay = theme === 'light';
-  const syncText = lastSync === 0 ? 'Not synced yet' : `Synced ${minutesAgo(lastSync)}`;
+  const lastOk = Math.max(lastSync, fetchedAt);
+  const syncText = lastOk === 0 ? 'Not synced yet' : `Synced ${formatAgo(lastOk, now.getTime())}`;
   const me = data?.members.find((m) => m.id === memberId);
   const initial = me ? me.name[0].toUpperCase() : '?';
   const showInsights = me && (me.role === 'lead' || me.role === 'admin');
