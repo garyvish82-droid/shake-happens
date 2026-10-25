@@ -18,7 +18,8 @@
           "backgroundColor": "#082A54",
           "resizeMode": "contain"
         }
-      ]
+      ],
+      "expo-sqlite"
     ],
     "icon": "./assets/icon.png",
     "ios": {
