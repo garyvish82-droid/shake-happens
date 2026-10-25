@@ -68,21 +68,21 @@ export default function HomeScreen() {
       </View>
 
       {/* title + shortcuts */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <View style={{ gap: 2, flexShrink: 1 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+        <View style={{ gap: 2, flex: 1 }}>
           <Text size={12} weight="bold" muted upper tracking={0.08} numberOfLines={1} adjustsFontSizeToFit>Camp [CAMP NAME] · Day 3</Text>
-          <Text size={25} weight="heavy" tracking={-0.02} numberOfLines={1} adjustsFontSizeToFit>Shake Happens</Text>
+          <Text size={24} weight="heavy" tracking={-0.02} numberOfLines={1} adjustsFontSizeToFit>Shake Happens</Text>
         </View>
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <Pressable
+            accessibilityLabel="Find camp"
             onPress={() => router.navigate('/(tabs)/(navigator)')}
             style={{
-              height: 48, paddingHorizontal: 12, borderRadius: 24, backgroundColor: palette.ink,
-              flexDirection: 'row', alignItems: 'center', gap: 6,
+              width: 48, height: 48, borderRadius: 24, backgroundColor: palette.ink,
+              alignItems: 'center', justifyContent: 'center',
             }}
           >
-            <Icon name="compass" size={18} color={palette.onInk} />
-            <Text size={14} weight="bold" color={palette.onInk}>Find camp</Text>
+            <Icon name="compass" size={22} color={palette.onInk} />
           </Pressable>
           <Pressable
             accessibilityLabel="Profile and camp lead tools"
