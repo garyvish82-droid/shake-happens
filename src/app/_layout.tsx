@@ -1,6 +1,4 @@
 import { Tabs } from 'expo-router';
-
-export { ErrorBoundary } from 'expo-router';
 import { ThemeProvider, useTheme } from '../theme/ThemeProvider';
 import {
   useFonts,
@@ -15,6 +13,10 @@ import {
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { spacing, touchTarget } from '../theme/tokens';
+
+export { ErrorBoundary } from 'expo-router';
+
+export const unstable_settings = { initialRouteName: '(home)' };
 
 SplashScreen.preventAutoHideAsync();
 
