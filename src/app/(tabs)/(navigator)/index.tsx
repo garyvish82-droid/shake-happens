@@ -5,6 +5,7 @@ import { useTheme } from '../../../theme/ThemeProvider';
 import { Text } from '../../../ui/Text';
 import { Icon } from '../../../ui/Icon';
 import { Screen } from '../../../ui/Screen';
+import { useCampData } from '../../../hooks/useCampData';
 
 // Sample targets, same as the design prototype (live GPS/compass comes later)
 const TARGETS = [
@@ -20,6 +21,7 @@ const C = SIZE / 2;
 
 export default function NavigateScreen() {
   const { palette, theme } = useTheme();
+  const { data } = useCampData();
   const [target, setTarget] = useState('camp');
   const [calib, setCalib] = useState(false);
   const night = theme === 'dark';
@@ -37,7 +39,7 @@ export default function NavigateScreen() {
     <Screen gap={12}>
       <View style={{ gap: 2 }}>
         <Text size={28} weight="heavy" tracking={-0.02}>Find camp</Text>
-        <Text size={13} weight="semibold" muted>Camp at [STREET & CLOCK ADDRESS]</Text>
+        <Text size={13} weight="semibold" muted>{data?.camp.pinLandmark ? `Look for: ${data.camp.pinLandmark}` : 'Camp location'}</Text>
       </View>
 
       {/* compass */}

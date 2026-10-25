@@ -1,51 +1,34 @@
-import { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Pressable, ScrollView, View } from 'react-native';
 import { useTheme } from '../../../theme/ThemeProvider';
 import { Text } from '../../../ui/Text';
 import { Icon } from '../../../ui/Icon';
 import { Screen } from '../../../ui/Screen';
-import { useSync } from '../../../hooks/useSync';
-
-const DOWS = ['Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const CREWS = [
-  ['Noa & Ben', 'Lior'],
-  ['Itay & Shira', 'Dor'],
-  ['Garik & Maya', 'Dor'],
-  ['Tal & Omer', 'Yael'],
-  ['Eden & Roni', 'Lior'],
-];
-const TIMES = [
-  ['10:00', '12:00'],
-  ['14:00', '16:00'],
-  ['16:00', '18:00'],
-  ['18:00', '20:00'],
-  ['22:00', '01:00'],
-];
+import { useCampData } from '../../../hooks/useCampData';
+import {
+  crewNames, dayNumOf, defaultDate, dowOf, shiftDates, titleCase,
+} from '../../../lib/campData';
 
 export default function ShiftsScreen() {
   const { palette } = useTheme();
-  const { lastSync } = useSync();
-  const [sel, setSel] = useState(2);
+  const { data, now, memberId, fetchedAt, refresh, status } = useCampData();
+  const [sel, setSel] = useState<string | null>(null);
   const [onlyMine, setOnlyMine] = useState(false);
 
-  const all = TIMES.map((t, i) => {
-    const mine = sel === 2 && i === 2;
-    const now = sel === 2 && i === 1;
-    const crew = CREWS[(i + sel) % CREWS.length];
-    return {
-      key: `${sel}-${i}`,
-      start: t[0],
-      end: t[1],
-      crew: mine ? 'Garik & Maya' : crew[0],
-      floater: mine ? 'Dor' : crew[1],
-      mine,
-      now,
-      rush: i === 3,
-      night: i === 4,
-      endsDay: `${DOWS[(sel + 1) % 6].toUpperCase()} 01:00`,
-    };
-  });
-  const shifts = onlyMine ? all.filter((s) => s.mine) : all;
+  const shifts = data?.shifts ?? [];
+  const dates = shiftDates(shifts);
+
+  // open on today (or the next day with shifts) once the data is here
+  useEffect(() => {
+    if (sel === null && dates.length > 0) setSel(defaultDate(dates, now));
+  }, [dates, sel, now]);
+
+  const day = shifts.filter((s) => s.date === sel);
+  const list = onlyMine ? day.filter((s) => memberId && s.memberIds.includes(memberId)) : day;
+
+  const synced = fetchedAt === 0
+    ? 'Not loaded yet'
+    : `Updated ${Math.max(0, Math.round((now.getTime() - fetchedAt) / 60000))} min ago`;
 
   const badge = (label: string, kind: 'solid' | 'teal' | 'outline' | 'muted') => {
     const style = {
@@ -69,10 +52,10 @@ export default function ShiftsScreen() {
 
   return (
     <Screen>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <View style={{ gap: 2, flexShrink: 1 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+        <View style={{ gap: 2, flex: 1 }}>
           <Text size={30} weight="heavy" tracking={-0.02}>Shifts</Text>
-          <Text size={13} weight="semibold" muted>Saved on your phone · {lastSync === 0 ? 'not synced yet' : `synced ${Math.max(0, Math.round((Date.now() - lastSync) / 60000))} min ago`}</Text>
+          <Text size={13} weight="semibold" muted numberOfLines={1}>{synced}</Text>
         </View>
         <Pressable
           accessibilityRole="button"
@@ -89,63 +72,97 @@ export default function ShiftsScreen() {
         </Pressable>
       </View>
 
-      <View style={{ flexDirection: 'row', gap: 6 }}>
-        {DOWS.map((dow, i) => {
-          const on = i === sel;
-          return (
-            <Pressable
-              key={dow}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: on }}
-              onPress={() => setSel(i)}
-              style={{
-                flex: 1, height: 60, borderRadius: 12, alignItems: 'center', justifyContent: 'center', gap: 2,
-                borderWidth: 1.5, borderColor: on ? palette.ink : palette.border,
-                backgroundColor: on ? palette.ink : palette.surface,
-              }}
-            >
-              <Text size={12} weight="bold" upper tracking={0.06} color={on ? palette.onInk : palette.text}>{dow}</Text>
-              <Text size={18} weight="bold" mono color={on ? palette.onInk : palette.text}>{i + 1}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      {dates.length === 0 ? (
+        <View style={{ padding: 20, borderRadius: 16, borderWidth: 1.5, borderStyle: 'dashed', borderColor: palette.border, gap: 12 }}>
+          <Text size={15} weight="semibold" muted style={{ textAlign: 'center' }}>
+            {status === 'loading'
+              ? 'Loading the schedule…'
+              : data
+                ? 'No published shifts yet.'
+                : 'The schedule has not loaded yet. Connect to the internet once and try again.'}
+          </Text>
+          <Pressable
+            onPress={refresh}
+            style={{ height: 48, borderRadius: 12, backgroundColor: palette.ink, alignItems: 'center', justifyContent: 'center' }}
+          >
+            <Text size={15} weight="heavy" color={palette.onInk}>Try again</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ flexGrow: 1, gap: 6 }}>
+            {dates.map((d) => {
+              const on = d === sel;
+              return (
+                <Pressable
+                  key={d}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: on }}
+                  onPress={() => setSel(d)}
+                  style={{
+                    flex: 1, minWidth: 54, height: 60, borderRadius: 12, alignItems: 'center', justifyContent: 'center', gap: 2,
+                    borderWidth: 1.5, borderColor: on ? palette.ink : palette.border,
+                    backgroundColor: on ? palette.ink : palette.surface,
+                  }}
+                >
+                  <Text size={12} weight="bold" upper tracking={0.06} color={on ? palette.onInk : palette.text}>{dowOf(d)}</Text>
+                  <Text size={18} weight="bold" mono color={on ? palette.onInk : palette.text}>{dayNumOf(d)}</Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
 
-      <View style={{ gap: 10 }}>
-        {shifts.map((s) => {
-          return (
-            <View
-              key={s.key}
-              style={{
-                flexDirection: 'row', gap: 12, alignItems: 'center', paddingVertical: 12, paddingHorizontal: 14,
-                borderRadius: 16, backgroundColor: palette.surface,
-                borderWidth: s.mine ? 3 : s.now ? 2 : 1.5,
-                borderColor: s.mine ? palette.ink : s.now ? palette.teal : palette.border,
-              }}
-            >
-              <View style={{ width: 66, gap: 2 }}>
-                <Text size={16} weight="bold" mono>{s.start}</Text>
-                <Text size={14} mono muted>{s.end}</Text>
-              </View>
-              <View style={{ flex: 1, gap: 4 }}>
-                <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
-                  {s.now && badge('● NOW', 'teal')}
-                  {s.mine && badge('YOU', 'solid')}
-                  {s.rush && badge('PEAK · +1 CREW', 'outline')}
-                  {s.night && badge(`NIGHT · ENDS ${s.endsDay}`, 'muted')}
+          <View style={{ gap: 10 }}>
+            {list.map((s) => {
+              const mine = !!memberId && s.memberIds.includes(memberId);
+              const live = s.startAt <= now && now < s.endAt;
+              const crossesMidnight = s.endAt.getDate() !== s.startAt.getDate();
+              return (
+                <View
+                  key={s.id}
+                  style={{
+                    flexDirection: 'row', gap: 12, alignItems: 'center', paddingVertical: 12, paddingHorizontal: 14,
+                    borderRadius: 16, backgroundColor: palette.surface,
+                    borderWidth: mine ? 3 : live ? 2 : 1.5,
+                    borderColor: mine ? palette.ink : live ? palette.teal : palette.border,
+                  }}
+                >
+                  <View style={{ width: 66, gap: 2 }}>
+                    <Text size={16} weight="bold" mono>{s.start}</Text>
+                    <Text size={14} mono muted>{s.end}</Text>
+                  </View>
+                  <View style={{ flex: 1, gap: 4 }}>
+                    <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
+                      {live && badge('● NOW', 'teal')}
+                      {mine && badge('YOU', 'solid')}
+                      {s.isPeak && badge('PEAK', 'outline')}
+                      {crossesMidnight && badge(`NIGHT · ENDS ${s.end}`, 'muted')}
+                    </View>
+                    <Text size={17} weight="bold">
+                      {s.memberIds.length > 0 && data ? crewNames(data.members, s.memberIds) : 'Not assigned yet'}
+                    </Text>
+                    <Text size={14} weight="semibold" muted>
+                      {titleCase(s.type)}{s.location && s.location.toLowerCase() !== s.type.toLowerCase() ? ` · ${s.location}` : ''}
+                    </Text>
+                    {!!s.notes && <Text size={13} weight="semibold" muted>{s.notes}</Text>}
+                  </View>
                 </View>
-                <Text size={17} weight="bold">{s.crew}</Text>
-                <Text size={14} weight="semibold" muted>Floater: {s.floater}</Text>
+              );
+            })}
+            {list.length === 0 && (
+              <View style={{ padding: 20, borderRadius: 16, borderWidth: 1.5, borderStyle: 'dashed', borderColor: palette.border }}>
+                <Text size={15} weight="semibold" muted style={{ textAlign: 'center' }}>
+                  {onlyMine
+                    ? memberId
+                      ? 'No shifts for you this day — enjoy the burn'
+                      : 'Pick who you are on Home to see your shifts'
+                    : 'No shifts this day'}
+                </Text>
               </View>
-            </View>
-          );
-        })}
-        {shifts.length === 0 && (
-          <View style={{ padding: 20, borderRadius: 16, borderWidth: 1.5, borderStyle: 'dashed', borderColor: palette.border }}>
-            <Text size={15} weight="semibold" muted style={{ textAlign: 'center' }}>No shifts for you this day — enjoy the burn</Text>
+            )}
           </View>
-        )}
-      </View>
+        </>
+      )}
     </Screen>
   );
 }

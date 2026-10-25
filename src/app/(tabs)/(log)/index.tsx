@@ -5,33 +5,29 @@ import { useTheme } from '../../../theme/ThemeProvider';
 import { Text } from '../../../ui/Text';
 import { Icon } from '../../../ui/Icon';
 import { Screen } from '../../../ui/Screen';
-import { DEFAULT_SIZE, MEMBER_ID } from '../../../lib/config';
 import { useSync } from '../../../hooks/useSync';
+import { useCampData } from '../../../hooks/useCampData';
+import { CAMP_ID, DEFAULT_SIZE } from '../../../lib/config';
+import type { Recipe } from '../../../lib/campData';
 
-const CAMP_ID = 'camp';
 /** how long the "Logged… Undo" bar and +N badges stay on screen */
 const CONFIRM_MS = 5000;
 
-const RECIPES = [
-  { id: 'recipe-banana-date', name: 'Banana Date', base: 'oat milk · dates' },
-  { id: 'recipe-mango-chill', name: 'Mango Chill', base: 'mango · coconut' },
-  { id: 'recipe-berry-dust', name: 'Berry Dust', base: 'berries · yogurt' },
-  { id: 'recipe-choco-tahini', name: 'Choco Tahini', base: 'cacao · tahini' },
-];
-
-type Entry = { logId: string; recipe: number };
+type Entry = { logId: string; recipeId: string };
 
 export default function LogScreen() {
   const { palette } = useTheme();
   const { db, waiting, refresh: refreshSync, syncNow } = useSync();
-  const [counts, setCounts] = useState([0, 0, 0, 0]);
+  const { data, memberId, refresh: refreshCamp, status } = useCampData();
+  const recipes: Recipe[] = data?.recipes ?? [];
+
+  const [counts, setCounts] = useState<Record<string, number>>({});
   const [history, setHistory] = useState<Entry[]>([]);
   const [total, setTotal] = useState(0);
-
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clearConfirmation = useCallback(() => {
-    setCounts([0, 0, 0, 0]);
+    setCounts({});
     setHistory([]);
   }, []);
 
@@ -57,21 +53,21 @@ export default function LogScreen() {
     }, [refresh])
   );
 
-  const add = async (recipe: number) => {
+  const add = async (recipe: Recipe) => {
     if (!db) return;
     try {
       const log = await db.logShake({
         camp_id: CAMP_ID,
-        recipe_id: RECIPES[recipe].id,
+        recipe_id: recipe.id,
         size: DEFAULT_SIZE,
         qty: 1,
-        is_alcoholic: 0,
-        logged_by: MEMBER_ID,
+        is_alcoholic: recipe.alcoholic ? 1 : 0,
+        logged_by: memberId ?? undefined,
         logged_at: Date.now(),
         voided: 0,
       });
-      setCounts((c) => c.map((n, i) => (i === recipe ? n + 1 : n)));
-      setHistory((h) => [...h, { logId: log.id, recipe }]);
+      setCounts((c) => ({ ...c, [recipe.id]: (c[recipe.id] ?? 0) + 1 }));
+      setHistory((h) => [...h, { logId: log.id, recipeId: recipe.id }]);
       armReset();
       await refresh();
       syncNow();
@@ -81,11 +77,12 @@ export default function LogScreen() {
   };
 
   const last = history[history.length - 1];
+  const lastRecipe = last ? recipes.find((r) => r.id === last.recipeId) : undefined;
 
   const undo = async () => {
     if (!last) return;
     // update the screen first so Undo always responds
-    setCounts((c) => c.map((n, i) => (i === last.recipe ? Math.max(0, n - 1) : n)));
+    setCounts((c) => ({ ...c, [last.recipeId]: Math.max(0, (c[last.recipeId] ?? 0) - 1) }));
     setHistory((h) => h.slice(0, -1));
     armReset();
     if (!db) return;
@@ -97,6 +94,9 @@ export default function LogScreen() {
       console.error('Failed to undo shake:', error);
     }
   };
+
+  const rows: Recipe[][] = [];
+  for (let i = 0; i < recipes.length; i += 2) rows.push(recipes.slice(i, i + 2));
 
   return (
     <Screen>
@@ -111,16 +111,27 @@ export default function LogScreen() {
         </View>
       </View>
 
-      <View style={{ gap: 10 }}>
-        {[0, 2].map((first) => (
-          <View key={first} style={{ flexDirection: 'row', gap: 10 }}>
-            {RECIPES.slice(first, first + 2).map((r, k) => {
-              const i = first + k;
-              return (
+      {recipes.length === 0 ? (
+        <View style={{ padding: 20, borderRadius: 16, borderWidth: 1.5, borderStyle: 'dashed', borderColor: palette.border, gap: 12 }}>
+          <Text size={15} weight="semibold" muted style={{ textAlign: 'center' }}>
+            {status === 'loading' ? 'Loading the drink list…' : 'The drink list has not loaded yet. Connect to the internet once and try again.'}
+          </Text>
+          <Pressable
+            onPress={refreshCamp}
+            style={{ height: 48, borderRadius: 12, backgroundColor: palette.ink, alignItems: 'center', justifyContent: 'center' }}
+          >
+            <Text size={15} weight="heavy" color={palette.onInk}>Try again</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <View style={{ gap: 10 }}>
+          {rows.map((row, ri) => (
+            <View key={ri} style={{ flexDirection: 'row', gap: 10 }}>
+              {row.map((r) => (
                 <Pressable
                   key={r.id}
                   accessibilityLabel={`Add one ${r.name}`}
-                  onPress={() => add(i)}
+                  onPress={() => add(r)}
                   style={({ pressed }) => ({
                     flex: 1, minHeight: 132, borderRadius: 20, borderWidth: 1.5, borderColor: palette.border,
                     backgroundColor: palette.surface, padding: 14, justifyContent: 'space-between', gap: 8,
@@ -131,18 +142,19 @@ export default function LogScreen() {
                     <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: palette.accent, alignItems: 'center', justifyContent: 'center' }}>
                       <Text size={24} weight="heavy" color={palette.onAccent} style={{ marginTop: -2 }}>+</Text>
                     </View>
-                    <Text size={22} weight="bold" mono>{counts[i] ? `+${counts[i]}` : ''}</Text>
+                    <Text size={22} weight="bold" mono>{counts[r.id] ? `+${counts[r.id]}` : ''}</Text>
                   </View>
                   <View style={{ gap: 2 }}>
-                    <Text size={18} weight="heavy" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{r.name}</Text>
-                    <Text size={13} weight="semibold" muted numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{r.base}</Text>
+                    <Text size={18} weight="heavy" numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>{r.name}</Text>
+                    {r.alcoholic && <Text size={13} weight="semibold" muted numberOfLines={1}>contains alcohol</Text>}
                   </View>
                 </Pressable>
-              );
-            })}
-          </View>
-        ))}
-      </View>
+              ))}
+              {row.length === 1 && <View style={{ flex: 1 }} />}
+            </View>
+          ))}
+        </View>
+      )}
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
         <Icon name="save" size={16} color={palette.teal} strokeWidth={2.4} />
@@ -156,8 +168,8 @@ export default function LogScreen() {
           accessibilityRole="alert"
           style={{ height: 56, borderRadius: 16, backgroundColor: palette.ink, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 16, paddingRight: 6 }}
         >
-          <Text size={15} weight="bold" color={palette.onInk}>
-            Logged 1 {RECIPES[last.recipe].name}
+          <Text size={15} weight="bold" color={palette.onInk} numberOfLines={1} style={{ flex: 1 }}>
+            Logged 1 {lastRecipe?.name ?? 'shake'}
           </Text>
           <Pressable onPress={undo} style={{ height: 44, paddingHorizontal: 16, borderRadius: 12, backgroundColor: palette.accent, alignItems: 'center', justifyContent: 'center' }}>
             <Text size={15} weight="heavy" color={palette.onAccent}>Undo</Text>

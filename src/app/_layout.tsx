@@ -15,6 +15,7 @@ import {
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { SyncProvider } from '../hooks/useSync';
+import { CampDataProvider } from '../hooks/useCampData';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -55,7 +56,9 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ThemeProvider>
         <SyncProvider>
-          <RootStack />
+          <CampDataProvider>
+            <RootStack />
+          </CampDataProvider>
         </SyncProvider>
       </ThemeProvider>
     </SafeAreaProvider>

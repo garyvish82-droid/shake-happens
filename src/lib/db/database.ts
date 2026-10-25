@@ -119,6 +119,24 @@ export class Database {
     await this.queueOutbox('shake_logs', 'UPDATE', id, { id, camp_id: campId, voided: 1, updated_at: now });
   }
 
+  // Small key/value store (cached camp data, who-am-I, confirmed shifts)
+  async getValue(key: string): Promise<string | null> {
+    if (!this.db) throw new Error('Database not initialized');
+    const row = await this.db.getFirstAsync<{ value: string }>(
+      'SELECT value FROM sync_state WHERE key = ?',
+      [key]
+    );
+    return row ? row.value : null;
+  }
+
+  async setValue(key: string, value: string) {
+    if (!this.db) throw new Error('Database not initialized');
+    await this.db.runAsync(
+      'INSERT OR REPLACE INTO sync_state (key, value, updated_at) VALUES (?, ?, ?)',
+      [key, value, Date.now()]
+    );
+  }
+
   // Stable per-install id; sent with every event
   async getDeviceId(): Promise<string> {
     if (!this.db) throw new Error('Database not initialized');
