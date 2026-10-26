@@ -3,7 +3,7 @@ import { Image, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView,
 import { StatusBar } from 'expo-status-bar';
 import * as Location from 'expo-location';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '../theme/ThemeProvider';
+import { ForceTheme, useTheme } from '../theme/ThemeProvider';
 import { Text } from '../ui/Text';
 import { Icon } from '../ui/Icon';
 import { useCampData } from '../hooks/useCampData';
@@ -18,7 +18,16 @@ const SUN_YELLOW = '#FFC83D';
 
 type Step = 'welcome' | 'name' | 'location';
 
+/** Onboarding is always daylight, so first-time users get the brand look whatever the phone or time of day says */
 export default function Onboarding() {
+  return (
+    <ForceTheme theme="light">
+      <OnboardingFlow />
+    </ForceTheme>
+  );
+}
+
+function OnboardingFlow() {
   const { palette } = useTheme();
   const insets = useSafeAreaInsets();
   const { data, status, refresh, setMemberId, completeOnboarding } = useCampData();

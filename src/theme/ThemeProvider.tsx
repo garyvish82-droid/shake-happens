@@ -51,6 +51,18 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** Pins everything inside to one theme (used by onboarding, which is always daylight) */
+export function ForceTheme({ theme, children }: { theme: Theme; children: React.ReactNode }) {
+  const value: ThemeContextType = {
+    theme,
+    palette: theme === 'light' ? dayPalette : nightPalette,
+    setTheme: () => {},
+    isAutoTheme: false,
+    setAutoTheme: () => {},
+  };
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+}
+
 export function useTheme() {
   const context = useContext(ThemeContext);
   if (context === undefined) throw new Error('useTheme must be used within ThemeProvider');
