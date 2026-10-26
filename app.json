@@ -44,7 +44,8 @@
         "backgroundImage": "./assets/android-icon-background.png"
       },
       "userInterfaceStyle": "automatic",
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.garik.shakehappens"
     },
     "web": {
       "favicon": "./assets/favicon.png"
