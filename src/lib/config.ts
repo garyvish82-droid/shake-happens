@@ -17,6 +17,8 @@ export const SHEET_URLS = {
   members: `${SHEET_BASE}?gid=922122489&single=true&output=csv`,
   shifts: `${SHEET_BASE}?gid=1867404900&single=true&output=csv`,
   recipes: `${SHEET_BASE}?gid=2021925627&single=true&output=csv`,
+  /** "parties calendar" tab, filled in on site */
+  events: `${SHEET_BASE}?gid=447182956&single=true&output=csv`,
 } as const;
 
 /** Local camp id used in the on-phone database */

@@ -14,6 +14,16 @@ export const brand = {
   sand: '#FFF0DB',
 } as const;
 
+/** Event categories (Events tab): brand colours, "other" is a muted grey */
+export const categoryColors = {
+  party: brand.pink,
+  ceremony: brand.yellow,
+  workshop: brand.green,
+  burn: brand.orange,
+  camp: brand.blue,
+  other: '#8793A6',
+} as const;
+
 export const dayPalette = {
   bg: '#FFF0DB', // sand page
   surface: '#FFFFFF', // cards

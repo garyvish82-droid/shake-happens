@@ -1,3 +1,4 @@
+import { ComponentRef, Ref } from 'react';
 import { ScrollView, StyleProp, View, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeProvider';
@@ -11,9 +12,11 @@ interface ScreenProps {
   flushTop?: boolean;
   contentStyle?: StyleProp<ViewStyle>;
   scroll?: boolean;
+  /** lets the caller scroll the page (e.g. to the next event) */
+  scrollRef?: Ref<ComponentRef<typeof ScrollView>>;
 }
 
-export function Screen({ children, gap = 14, background, flushTop, contentStyle, scroll = true }: ScreenProps) {
+export function Screen({ children, gap = 14, background, flushTop, contentStyle, scroll = true, scrollRef }: ScreenProps) {
   const { palette } = useTheme();
   const insets = useSafeAreaInsets();
   const bg = background ?? palette.bg;
@@ -28,6 +31,7 @@ export function Screen({ children, gap = 14, background, flushTop, contentStyle,
 
   return (
     <ScrollView
+      ref={scrollRef}
       style={{ flex: 1, backgroundColor: bg }}
       contentContainerStyle={content}
       keyboardShouldPersistTaps="handled"

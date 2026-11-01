@@ -6,6 +6,7 @@ import { Text } from './Text';
 
 const TABS: { route: string; label: string; icon: IconName }[] = [
   { route: '(home)', label: 'Home', icon: 'home' },
+  { route: '(events)', label: 'Events', icon: 'events' },
   { route: '(shifts)', label: 'Shifts', icon: 'calendar' },
   { route: '(log)', label: 'Log', icon: 'log' },
   { route: '(navigator)', label: 'Find camp', icon: 'compass' },

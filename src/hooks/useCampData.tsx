@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { SHEET_REFRESH_MS, SHEET_URLS } from '../lib/config';
 import { parseCampData, type CampData, type RawTabs } from '../lib/campData';
@@ -50,6 +50,8 @@ export function CampDataProvider({ children }: { children: React.ReactNode }) {
   const [now, setNow] = useState(() => new Date());
   const [storedMemberId, setMemberIdState] = useState<string | null>(null);
   const [onboarded, setOnboarded] = useState<boolean | null>(null);
+  // last events CSV we trust, kept when only the events tab fails to load
+  const lastEvents = useRef('');
 
   // a saved name that is no longer in the sheet counts as "not picked"
   const memberId =
@@ -62,7 +64,9 @@ export function CampDataProvider({ children }: { children: React.ReactNode }) {
       const cached = await db.getValue(CACHE_KEY);
       if (cached) {
         try {
-          setData(parseCampData(JSON.parse(cached) as RawTabs));
+          const saved = JSON.parse(cached) as RawTabs;
+          lastEvents.current = saved.events ?? '';
+          setData(parseCampData(saved));
           setFetchedAt(Number(await db.getValue(CACHE_AT_KEY)) || 0);
           setStatus('offline'); // until the first successful fetch
         } catch {
@@ -77,13 +81,16 @@ export function CampDataProvider({ children }: { children: React.ReactNode }) {
   const refresh = useCallback(async () => {
     if (!db) return;
     try {
-      const [camp, members, shifts, recipes] = await Promise.all([
+      const [camp, members, shifts, recipes, events] = await Promise.all([
         fetchTab(SHEET_URLS.camp),
         fetchTab(SHEET_URLS.members),
         fetchTab(SHEET_URLS.shifts),
         fetchTab(SHEET_URLS.recipes),
+        // a missing events tab must not block the rest of the camp data
+        fetchTab(SHEET_URLS.events).catch(() => lastEvents.current),
       ]);
-      const raw: RawTabs = { camp, members, shifts, recipes };
+      lastEvents.current = events;
+      const raw: RawTabs = { camp, members, shifts, recipes, events };
       setData(parseCampData(raw));
       const at = Date.now();
       setFetchedAt(at);

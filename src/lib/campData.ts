@@ -31,9 +31,29 @@ export type Shift = {
 
 export type Recipe = { id: string; name: string; alcoholic: boolean; sortOrder: number };
 
-export type CampData = { camp: Camp; members: Member[]; shifts: Shift[]; recipes: Recipe[] };
+export const EVENT_CATEGORIES = ['party', 'ceremony', 'workshop', 'burn', 'camp', 'other'] as const;
+export type EventCategory = (typeof EVENT_CATEGORIES)[number];
 
-export type RawTabs = { camp: string; members: string; shifts: string; recipes: string };
+export type FestivalEvent = {
+  id: string;
+  date: string;
+  /** "HH:MM", '' when the time is not set yet */
+  start: string;
+  end: string;
+  title: string;
+  place: string;
+  category: EventCategory;
+  description: string;
+  startAt: Date | null;
+  endAt: Date | null;
+  /** end is earlier than start: the event runs past midnight */
+  endsNextDay: boolean;
+};
+
+export type CampData = { camp: Camp; members: Member[]; shifts: Shift[]; recipes: Recipe[]; events: FestivalEvent[] };
+
+/** events is missing in copies saved before the Events tab existed */
+export type RawTabs = { camp: string; members: string; shifts: string; recipes: string; events?: string };
 
 // ---------- CSV ----------
 
@@ -79,7 +99,8 @@ export function parseCsv(text: string): string[][] {
 }
 
 function toObjects(text: string): Record<string, string>[] {
-  const rows = parseCsv(text);
+  // blank lines (the file may start with one) are not rows
+  const rows = parseCsv(text).filter((r) => r.some((c) => c.trim() !== ''));
   if (rows.length === 0) return [];
   const header = rows[0].map((h) => h.trim());
   return rows.slice(1).map((r) => {
@@ -183,12 +204,49 @@ function parseRecipes(text: string): Recipe[] {
     .sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
+/** "9:00" or "09:00:00" -> "09:00"; '' when it is not a time */
+function validTime(v: string) {
+  const m = /^(\d{1,2}):(\d{2})(?::\d{2})?$/.exec(v.trim());
+  return m ? `${m[1].padStart(2, '0')}:${m[2]}` : '';
+}
+
+/** Rows without a date or title are skipped; unknown categories become "other"; all times are device-local */
+function parseEvents(text: string): FestivalEvent[] {
+  const out: FestivalEvent[] = [];
+  toObjects(text).forEach((o, i) => {
+    const date = normalizeDate(o.date ?? '');
+    if (!date || !o.title) return;
+    const start = validTime(o.start ?? '');
+    const end = start ? validTime(o.end ?? '') : '';
+    const startAt = start ? at(date, start) : null;
+    const endAt = end ? at(date, end) : null;
+    const endsNextDay = !!startAt && !!endAt && endAt < startAt;
+    if (endsNextDay && endAt) endAt.setDate(endAt.getDate() + 1);
+    const cat = (o.category ?? '').toLowerCase() as EventCategory;
+    out.push({
+      id: `${date}-${i}`,
+      date,
+      start,
+      end,
+      title: o.title,
+      place: o.place ?? '',
+      category: EVENT_CATEGORIES.includes(cat) ? cat : 'other',
+      description: o.description ?? '',
+      startAt,
+      endAt,
+      endsNextDay,
+    });
+  });
+  return out;
+}
+
 export function parseCampData(raw: RawTabs): CampData {
   return {
     camp: parseCamp(raw.camp),
     members: parseMembers(raw.members),
     shifts: parseShifts(raw.shifts),
     recipes: parseRecipes(raw.recipes),
+    events: parseEvents(raw.events ?? ''),
   };
 }
 
@@ -197,6 +255,7 @@ export function parseCampData(raw: RawTabs): CampData {
 const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTH = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+export const monthOf = (date: string) => MONTH[Number(date.slice(5, 7)) - 1] ?? '';
 export const dowOf = (date: string) => {
   const d = at(date, '00:00');
   return d ? DOW[d.getDay()] : '';
@@ -223,6 +282,25 @@ export function todayKey(now: Date) {
   const p = (n: number) => String(n).padStart(2, '0');
   return `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}`;
 }
+
+/** Distinct dates that have events */
+export const eventDates = (events: FestivalEvent[]) => Array.from(new Set(events.map((e) => e.date))).sort();
+
+/** Events talk about "today" only when it is in the data; otherwise open on the first day */
+export const defaultEventDate = (dates: string[], now: Date) => {
+  const t = todayKey(now);
+  return dates.includes(t) ? t : (dates[0] ?? null);
+};
+
+/** Timed events by start time, then the ones without a start ("Time TBA") */
+export function sortEvents(events: FestivalEvent[]) {
+  return [...events].sort((a, b) => {
+    if (!a.startAt || !b.startAt) return a.startAt ? -1 : b.startAt ? 1 : 0;
+    return a.startAt.getTime() - b.startAt.getTime();
+  });
+}
+
+export const eventIsNow = (e: FestivalEvent, now: Date) => !!e.startAt && !!e.endAt && e.startAt <= now && now < e.endAt;
 
 /** Which day tab to open first: today, else the next day with shifts, else the last one */
 export function defaultDate(dates: string[], now: Date) {
